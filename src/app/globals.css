@@ -425,7 +425,7 @@ button:enabled, summary { cursor: pointer; }
   justify-content: center;
   flex: none;
   min-height: 44px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--boundary);
   border-radius: var(--radius-chip);
   background: var(--surface);
   padding-inline: .9rem;
@@ -435,6 +435,8 @@ button:enabled, summary { cursor: pointer; }
   white-space: nowrap;
   transition: background-color 160ms, border-color 160ms, color 160ms, transform 120ms;
 }
+.clinic-chip:hover:not(.is-active):not(:disabled),
+.sort-chip:hover:not([aria-pressed="true"]):not(:disabled) { border-color: var(--ink-soft); background: var(--primary-soft); }
 .clinic-chip:active, .sort-chip:active { transform: scale(0.98); }
 .clinic-chip.is-active, .sort-chip[aria-pressed="true"],
 .clinic-chip--default.is-active { border-color: var(--primary); background: var(--primary); color: white; }
