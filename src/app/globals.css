@@ -384,6 +384,7 @@ button:enabled, summary { cursor: pointer; }
 .today-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-block: .7rem 1.2rem; }
 .action-tile { display: flex; align-items: center; gap: .58rem; min-height: 58px; padding: .52rem .65rem; }
 .action-tile:hover { border-color: var(--primary); }
+.action-tile:active { transform: scale(0.98); }
 .action-tile--mint { border-color: var(--mint-line); background: var(--mint); }
 .action-tile strong { display: block; font-size: .86rem; font-weight: 700; line-height: 1.55; overflow-wrap: anywhere; }
 .action-icon { display: grid; place-items: center; flex: none; width: 2.25rem; height: 2.25rem; border-radius: .72rem; }
