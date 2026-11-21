@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ComponentPropsWithRef, ReactNode, TextareaHTMLAttributes } from "react";
+import { useEffect, useState, type ButtonHTMLAttributes, type ComponentPropsWithRef, type ReactNode, type TextareaHTMLAttributes } from "react";
 import { ar } from "@/lib/ar";
 
 export function PageHeader({
@@ -165,7 +167,19 @@ export function EmptyState({
 }
 
 export function SavedToast({ show }: { show: boolean }) {
-  if (!show) return null;
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!show) {
+      setVisible(false);
+      return;
+    }
+    setVisible(true);
+    const timer = window.setTimeout(() => setVisible(false), 5000);
+    return () => window.clearTimeout(timer);
+  }, [show]);
+
+  if (!visible) return null;
   return (
     <div role="status" className="saved-toast">
       <div className="notice-card">{ar.common.saved}</div>
