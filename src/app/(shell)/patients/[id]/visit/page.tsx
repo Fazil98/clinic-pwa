@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Chip,
   EmptyState,
@@ -32,6 +32,8 @@ export default function AddVisitPage() {
   const [notes, setNotes] = useState("");
   const [nextVisitDate, setNextVisitDate] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     setDate(today);
@@ -44,6 +46,10 @@ export default function AddVisitPage() {
   }
 
   async function onSave() {
+    if (savingRef.current || !date) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError("");
     const entry = await addVisit({
       patientId: patient!.id,
       date,
@@ -52,6 +58,8 @@ export default function AddVisitPage() {
       nextVisitDate: nextVisitDate || undefined,
     });
     if (!entry) {
+      savingRef.current = false;
+      setSaving(false);
       setSaveError(ar.common.saveFailed);
       return;
     }
@@ -112,8 +120,8 @@ export default function AddVisitPage() {
           </p>
         </div>
 
-        <PrimaryButton type="button" disabled={saved || !date} onClick={onSave}>
-          {ar.visit.save}
+        <PrimaryButton type="button" disabled={saved || saving || !date} onClick={onSave}>
+          {saving ? ar.common.saving : ar.visit.save}
         </PrimaryButton>
       </div>
     </div>

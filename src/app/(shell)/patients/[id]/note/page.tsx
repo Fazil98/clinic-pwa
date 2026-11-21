@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   EmptyState,
   FieldLabel,
@@ -25,6 +25,8 @@ export default function AddNotePage() {
   const [notes, setNotes] = useState("");
   const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     setDate(today);
@@ -37,13 +39,18 @@ export default function AddNotePage() {
   }
 
   async function onSave() {
-    if (!notes.trim()) return;
+    if (savingRef.current || !notes.trim() || !date) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError("");
     const entry = await addNote({
       patientId: patient!.id,
       date,
       notes: notes.trim(),
     });
     if (!entry) {
+      savingRef.current = false;
+      setSaving(false);
       setSaveError(ar.common.saveFailed);
       return;
     }
@@ -77,10 +84,10 @@ export default function AddNotePage() {
         </div>
         <PrimaryButton
           type="button"
-          disabled={saved || !date || !notes.trim()}
+          disabled={saved || saving || !date || !notes.trim()}
           onClick={onSave}
         >
-          {ar.note.save}
+          {saving ? ar.common.saving : ar.note.save}
         </PrimaryButton>
       </div>
     </div>

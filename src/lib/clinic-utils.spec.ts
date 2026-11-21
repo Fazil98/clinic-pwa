@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { removePatientRecords, removeTimelineEntry, type ClinicRecords } from "@/lib/clinic-utils";
+import {
+  removePatientRecords,
+  removeTimelineEntry,
+  restorePatientRecords,
+  restoreTimelineEntry,
+  searchPatients,
+  type ClinicRecords,
+} from "@/lib/clinic-utils";
 import type { Patient, TimelineEntry } from "@/lib/types";
 
 function patient(id: string): Patient {
@@ -67,5 +74,55 @@ describe("removeTimelineEntry", () => {
     const current = records();
 
     expect(removeTimelineEntry(current, "missing")).toBe(current);
+  });
+});
+
+describe("restorePatientRecords", () => {
+  it("puts the patient and her visits back after a failed delete", () => {
+    const current = records();
+    const removed = current.patients[0];
+    const removedEntries = current.timeline.filter((entry) => entry.patientId === "p1");
+    const deleted = removePatientRecords(current, "p1");
+
+    const restored = restorePatientRecords(deleted, removed, removedEntries);
+
+    expect(restored.patients.map((item) => item.id)).toEqual(["p1", "p2"]);
+    expect(restored.timeline.map((item) => item.id)).toEqual(["t1", "t2", "t3"]);
+  });
+
+  it("does not duplicate a patient who is already on the list", () => {
+    const current = records();
+
+    const restored = restorePatientRecords(current, current.patients[0], current.timeline);
+
+    expect(restored.patients.map((item) => item.id)).toEqual(["p1", "p2"]);
+    expect(restored.timeline).toBe(current.timeline);
+  });
+});
+
+describe("restoreTimelineEntry", () => {
+  it("puts one visit back and leaves the other entries", () => {
+    const current = records();
+    const removed = current.timeline[0];
+    const deleted = removeTimelineEntry(current, removed.id);
+
+    const restored = restoreTimelineEntry(deleted, removed);
+
+    expect(restored.timeline.map((item) => item.id)).toEqual(["t1", "t2", "t3"]);
+    expect(restored.patients).toBe(deleted.patients);
+  });
+});
+
+describe("searchPatients", () => {
+  it("finds a patient by name when she has no phone number", () => {
+    const blank = { ...patient("p1"), phone: "" };
+
+    expect(searchPatients([blank], "سارة").map((item) => item.id)).toEqual(["p1"]);
+  });
+
+  it("does not match an empty phone number against a digit search", () => {
+    const blank = { ...patient("p1"), phone: "" };
+
+    expect(searchPatients([blank], "0770")).toEqual([]);
   });
 });

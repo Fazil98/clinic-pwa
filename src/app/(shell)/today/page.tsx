@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { PatientRow } from "@/components/PatientRow";
 import { EmptyState, ListSkeleton, PageHeader } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
@@ -34,9 +35,7 @@ export default function TodayPage() {
 
       <section className="schedule-card" aria-label={ar.today.title}>
         <div className="schedule-art" aria-hidden="true">
-          <span className="schedule-scope" />
-          <span className="schedule-chestpiece" />
-          <span className="schedule-cross" />
+          <Icon name="stethoscope" />
         </div>
         <dl className="schedule-counts">
           <div>
@@ -52,11 +51,11 @@ export default function TodayPage() {
 
       <div className="today-actions">
         <Link href="/patients/new" className="action-tile">
-          <span className="action-icon action-icon--blue" aria-hidden="true"><span className="glyph-plus" /></span>
+          <span className="action-icon action-icon--blue" aria-hidden="true"><Icon name="userPlus" /></span>
           <strong>{ar.add.newPatientTitle}</strong>
         </Link>
         <Link href="/patients" className="action-tile action-tile--mint">
-          <span className="action-icon action-icon--mint" aria-hidden="true"><span className="glyph-search" /></span>
+          <span className="action-icon action-icon--mint" aria-hidden="true"><Icon name="search" /></span>
           <strong>{ar.today.findPatient}</strong>
         </Link>
       </div>

@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { Icon } from "@/components/Icon";
+import { PatientImages } from "@/components/PatientImages";
 import { AppBack, Card, EmptyState, ListSkeleton } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
@@ -16,7 +18,7 @@ import {
   visitTypeLabel,
 } from "@/lib/labels";
 import { useClientToday } from "@/lib/use-client-today";
-import type { TimelineEntry } from "@/lib/types";
+import type { Patient, TimelineEntry } from "@/lib/types";
 
 export default function PatientDetailPage() {
   const today = useClientToday();
@@ -29,8 +31,17 @@ export default function PatientDetailPage() {
   const [pendingDelete, setPendingDelete] = useState<
     { kind: "patient" } | { kind: "entry"; entry: TimelineEntry } | null
   >(null);
-  const nextVisit = patient
-    ? activeNextVisit(timeline, patient.id)
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
+  const [heldPatient, setHeldPatient] = useState<Patient | null>(null);
+  const deletingRef = useRef(false);
+  const shown = patient ?? heldPatient;
+
+  useEffect(() => {
+    if (patient) setHeldPatient(null);
+  }, [patient]);
+  const nextVisit = shown
+    ? activeNextVisit(timeline, shown.id)
     : undefined;
 
   const visitStatus = nextVisit === today ? "today" : nextVisit && nextVisit < today ? "overdue" : undefined;
@@ -39,7 +50,7 @@ export default function PatientDetailPage() {
     return <ListSkeleton />;
   }
 
-  if (!patient) {
+  if (!shown) {
     return (
       <EmptyState
         title={ar.patient.notFoundTitle}
@@ -56,19 +67,19 @@ export default function PatientDetailPage() {
       <Card className="patient-identity">
         <div className="identity-header">
           <div className="min-w-0">
-            <h1 className="identity-title" dir="auto">{patient.fullName}</h1>
-            <p className="identity-condition">{patientStatusLabel(patient, today)}</p>
-            {patient.age || patient.highRisk ? (
+            <h1 className="identity-title" dir="auto">{shown.fullName}</h1>
+            <p className="identity-condition">{patientStatusLabel(shown, today)}</p>
+            {shown.age || shown.highRisk ? (
               <div className="patient-tags">
-                {patient.age ? <span className="patient-tag">{ar.patient.agePrefix} {patient.age}</span> : null}
-                {patient.highRisk ? (
+                {shown.age ? <span className="patient-tag">{ar.patient.agePrefix} {shown.age}</span> : null}
+                {shown.highRisk ? (
                   <span className="patient-tag" data-tone="attention">{ar.patients.highRisk}</span>
                 ) : null}
               </div>
             ) : null}
           </div>
           <div className="identity-tools" aria-label={ar.patient.manage}>
-            <Link href={`/patients/${patient.id}/edit`} className="identity-tool">
+            <Link href={`/patients/${shown.id}/edit`} className="identity-tool">
               {ar.patient.editDetails}
             </Link>
             {canDelete ? (
@@ -81,7 +92,7 @@ export default function PatientDetailPage() {
 
         <div className="identity-meta">
           <div className="identity-tile identity-tile--visit" data-tone={visitStatus}>
-            <span className="patient-calendar" aria-hidden="true" />
+            <Icon name="calendar" className="patient-calendar" />
             <div className="min-w-0">
               <span className="identity-label">{ar.patient.nextVisit}</span>
               {nextVisit ? (
@@ -97,20 +108,22 @@ export default function PatientDetailPage() {
             ) : null}
           </div>
 
-          <a href={`tel:${patient.phone}`} className="identity-tile identity-tile--call">
-            <PhoneIcon />
-            <div className="min-w-0">
-              <span className="identity-label">{ar.patient.call}</span>
-              <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi>
-            </div>
-          </a>
+          {shown.phone.trim() ? (
+            <a href={`tel:${shown.phone}`} className="identity-tile identity-tile--call">
+              <PhoneIcon />
+              <div className="min-w-0">
+                <span className="identity-label">{ar.patient.call}</span>
+                <bdi dir="ltr" className="patient-phone">{shown.phone}</bdi>
+              </div>
+            </a>
+          ) : null}
         </div>
 
         <div className="profile-actions">
-          <Link href={`/patients/${patient.id}/visit`} className="clinic-button clinic-button--primary">
+          <Link href={`/patients/${shown.id}/visit`} className="clinic-button clinic-button--primary">
             {ar.patient.addVisit}
           </Link>
-          <Link href={`/patients/${patient.id}/note`} className="clinic-button clinic-button--secondary">
+          <Link href={`/patients/${shown.id}/note`} className="clinic-button clinic-button--secondary">
             {ar.patient.addNote}
           </Link>
         </div>
@@ -172,21 +185,21 @@ export default function PatientDetailPage() {
           <Card className="profile-section profile-section--contact">
             <h3 className="profile-section-title">{ar.patient.personal}</h3>
             <dl className="profile-facts">
-              <Row label={ar.patient.phone} value={patient.phone} ltr />
+              <Row label={ar.patient.phone} value={shown.phone.trim() || ar.common.dash} ltr />
               <Row
                 label={ar.patient.age}
-                value={patient.age?.toString() || ar.common.dash}
+                value={shown.age?.toString() || ar.common.dash}
               />
               <Row
                 label={ar.patient.area}
-                value={patient.area || ar.common.dash}
+                value={shown.area || ar.common.dash}
               />
               <Row
                 label={ar.patient.emergency}
                 wide
                 value={
-                  patient.emergencyName
-                    ? `${patient.emergencyName} · ${patient.emergencyPhone || ""}`
+                  shown.emergencyName
+                    ? `${shown.emergencyName} · ${shown.emergencyPhone || ""}`
                     : ar.common.dash
                 }
               />
@@ -198,48 +211,48 @@ export default function PatientDetailPage() {
             <dl className="profile-facts">
               <Row
                 label={ar.patient.type}
-                value={patientTypeLabel[patient.patientType]}
+                value={patientTypeLabel[shown.patientType]}
               />
-              {patient.patientType === "pregnant" ? (
+              {shown.patientType === "pregnant" ? (
                 <>
                   <Row
                     label={ar.patient.dueDate}
-                    value={formatDisplayDate(patient.dueDate)}
+                    value={formatDisplayDate(shown.dueDate)}
                   />
                   <Row
                     label={ar.patient.lmp}
-                    value={formatDisplayDate(patient.lmpDate)}
+                    value={formatDisplayDate(shown.lmpDate)}
                   />
                   <Row
                     label={ar.patient.previousPregnancies}
                     value={
-                      patient.previousPregnancies?.toString() || ar.common.dash
+                      shown.previousPregnancies?.toString() || ar.common.dash
                     }
                   />
                   <Row
                     label={ar.patient.previousCSection}
                     value={
-                      patient.previousCSection === undefined
+                      shown.previousCSection === undefined
                         ? ar.common.dash
-                        : patient.previousCSection
+                        : shown.previousCSection
                           ? ar.patient.yes
                           : ar.patient.no
                     }
                   />
                 </>
               ) : null}
-              {patient.patientType === "postpartum" ? (
+              {shown.patientType === "postpartum" ? (
                 <>
                   <Row
                     label={ar.patient.delivery}
-                    value={formatDisplayDate(patient.deliveryDate)}
+                    value={formatDisplayDate(shown.deliveryDate)}
                   />
                   <Row
                     label={ar.patient.birthType}
                     value={
-                      patient.birthType === "csection"
+                      shown.birthType === "csection"
                         ? ar.patient.csection
-                        : patient.birthType === "normal"
+                        : shown.birthType === "normal"
                           ? ar.patient.normalBirth
                           : ar.common.dash
                     }
@@ -247,16 +260,16 @@ export default function PatientDetailPage() {
                   <Row
                     label={ar.patient.babyNotes}
                     wide
-                    value={patient.babyNotes || ar.common.dash}
+                    value={shown.babyNotes || ar.common.dash}
                   />
                 </>
               ) : null}
-              {patient.patientType === "gynecology" ||
-              patient.patientType === "other" ? (
+              {shown.patientType === "gynecology" ||
+              shown.patientType === "other" ? (
                 <Row
                   label={ar.patient.reason}
                   wide
-                  value={patient.mainReason || ar.common.dash}
+                  value={shown.mainReason || ar.common.dash}
                 />
               ) : null}
             </dl>
@@ -265,10 +278,10 @@ export default function PatientDetailPage() {
           <Card className="profile-section profile-section--history">
             <h3 className="profile-section-title">{ar.patient.history}</h3>
             <div className="profile-flag-list">
-              {patient.healthFlags.length === 0 ? (
+              {shown.healthFlags.length === 0 ? (
                 <p className="text-[var(--muted)]">{ar.patient.noFlags}</p>
               ) : (
-                patient.healthFlags.map((flag) => (
+                shown.healthFlags.map((flag) => (
                   <span key={flag}>{healthFlagLabel[flag]}</span>
                 ))
               )}
@@ -276,48 +289,70 @@ export default function PatientDetailPage() {
             <dl className="profile-facts">
               <Row
                 label={ar.patient.allergy}
-                value={patient.allergyNote || ar.common.dash}
+                value={shown.allergyNote || ar.common.dash}
               />
               <Row
                 label={ar.patient.medicines}
-                value={patient.medicines || ar.common.dash}
+                value={shown.medicines || ar.common.dash}
               />
               <Row
                 label={ar.patient.bloodType}
                 ltr
-                value={patient.bloodType || ar.common.dash}
+                value={shown.bloodType || ar.common.dash}
               />
               <Row
                 label={ar.patient.notes}
                 wide
-                value={patient.historyNotes || ar.common.dash}
+                value={shown.historyNotes || ar.common.dash}
               />
             </dl>
           </Card>
+          <PatientImages patientId={shown.id} canDelete={canDelete} />
         </div>
       )}
       <ConfirmDialog
         open={pendingDelete !== null}
+        busy={deleting}
+        error={deleteError ? ar.common.saveFailed : undefined}
         title={pendingDelete?.kind === "entry" ? ar.patient.deleteEntryTitle : ar.patient.deletePatientTitle}
         description={
           pendingDelete?.kind === "entry"
             ? ar.patient.deleteEntryBody(entryDeleteLabel(pendingDelete.entry))
-            : ar.patient.deletePatientBody(patient.fullName)
+            : ar.patient.deletePatientBody(shown.fullName)
         }
         confirmLabel={ar.common.delete}
         onConfirm={() => {
-          if (pendingDelete?.kind === "entry") {
-            const entryId = pendingDelete.entry.id;
-            setPendingDelete(null);
-            void deleteTimelineEntry(entryId);
-            return;
-          }
-          const id = patient.id;
-          setPendingDelete(null);
-          router.replace("/patients");
-          void deletePatient(id);
+          if (deletingRef.current || !pendingDelete) return;
+          deletingRef.current = true;
+          setDeleting(true);
+          setDeleteError(false);
+          const request = pendingDelete;
+          void (async () => {
+            if (request.kind === "entry") {
+              const ok = await deleteTimelineEntry(request.entry.id);
+              deletingRef.current = false;
+              setDeleting(false);
+              if (ok) setPendingDelete(null);
+              else setDeleteError(true);
+              return;
+            }
+            setHeldPatient(shown);
+            const ok = await deletePatient(shown.id);
+            deletingRef.current = false;
+            setDeleting(false);
+            if (ok) {
+              setPendingDelete(null);
+              router.replace("/patients");
+              return;
+            }
+            setDeleteError(true);
+          })();
         }}
-        onCancel={() => setPendingDelete(null)}
+        onCancel={() => {
+          if (deletingRef.current) return;
+          setPendingDelete(null);
+          setDeleteError(false);
+        }}
       />
     </div>
   );
@@ -333,14 +368,7 @@ function entryDeleteLabel(entry: TimelineEntry) {
 function PhoneIcon() {
   return (
     <span className="identity-call-icon" aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M7.2 4.8h2.1l1.2 3-1.6 1a12 12 0 0 0 5.3 5.3l1-1.6 3 1.2v2.1c0 .8-.7 1.5-1.5 1.4A15.5 15.5 0 0 1 5.8 6.3c-.1-.8.6-1.5 1.4-1.5Z"
-          stroke="currentColor"
-          strokeWidth="1.8"
-          strokeLinejoin="round"
-        />
-      </svg>
+      <Icon name="phone" />
     </span>
   );
 }

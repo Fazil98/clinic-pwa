@@ -197,7 +197,7 @@ button:enabled, summary { cursor: pointer; }
   border-radius: var(--radius-control);
 }
 
-.nav-icon svg { width: 1.2rem; height: 1.2rem; }
+.nav-icon svg { width: 1.35rem; height: 1.35rem; }
 .clinic-nav-link[aria-current] .nav-icon,
 .clinic-nav-link[aria-expanded="true"] .nav-icon { background: var(--primary); color: white; }
 .clinic-nav-add-mobile:not([aria-current]):not([aria-expanded="true"]) .nav-icon { background: var(--primary-soft); color: var(--primary); }
@@ -223,6 +223,7 @@ button:enabled, summary { cursor: pointer; }
 .page-heading h1 { font-size: clamp(1.55rem, 6vw, 2.15rem); line-height: 1.3; font-weight: 800; overflow-wrap: anywhere; }
 .page-heading p, .page-heading time { display: block; color: var(--muted); font-size: .88rem; font-weight: 500; margin-top: .18rem; overflow-wrap: anywhere; }
 
+.clinic-icon { display: block; flex: none; width: 1.25rem; height: 1.25rem; }
 .icon-button {
   display: inline-grid;
   place-items: center;
@@ -236,20 +237,11 @@ button:enabled, summary { cursor: pointer; }
   font-size: 1.45rem;
   line-height: 1;
 }
+.icon-button svg { width: 1.15rem; height: 1.15rem; }
 .icon-button:hover { background: var(--primary-soft); }
 .icon-button:active { transform: scale(0.98); }
 
-.chevron {
-  display: block;
-  flex: none;
-  width: .48rem;
-  height: .48rem;
-  border: solid currentColor;
-  border-width: 0 0 2px 2px;
-  transform: rotate(45deg);
-}
-
-.app-back .chevron { transform: rotate(225deg); }
+.chevron { display: block; flex: none; width: 1.05rem; height: 1.05rem; color: var(--primary); }
 
 .clinic-card, .form-panel, .empty-state, .form-section, .action-tile, .patient-row, .patient-identity {
   border: 1px solid var(--line);
@@ -338,55 +330,16 @@ button:enabled, summary { cursor: pointer; }
 .schedule-art {
   grid-column: 2;
   grid-row: 1;
-  position: relative;
+  display: grid;
+  place-items: center;
   flex: none;
   width: clamp(3.5rem, 16vw, 6.25rem);
   aspect-ratio: 1;
   border-radius: 30% 45% 35% 40%;
   background: var(--surface);
-  color: var(--teal);
+  color: var(--teal-deep);
 }
-.schedule-scope {
-  position: absolute;
-  inset-inline-start: 24%;
-  inset-block-start: 20%;
-  width: 30%;
-  height: 33%;
-  border: 2px solid currentColor;
-  border-top: 0;
-  border-radius: 0 0 50% 50%;
-}
-.schedule-scope::after {
-  content: "";
-  position: absolute;
-  inset-inline-start: 43%;
-  inset-block-start: 97%;
-  width: 104%;
-  height: 93%;
-  border: 2px solid currentColor;
-  border-top: 0;
-  border-radius: 0 0 50% 50%;
-}
-.schedule-chestpiece {
-  position: absolute;
-  inset-inline-start: 61%;
-  inset-block-start: 44%;
-  width: 15%;
-  aspect-ratio: 1;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  background: white;
-}
-.schedule-cross {
-  position: absolute;
-  inset-inline-end: 10%;
-  inset-block-start: 10%;
-  width: 22%;
-  aspect-ratio: 1;
-  border-radius: 30%;
-  background: linear-gradient(white,white) center / 47% 2px no-repeat,
-    linear-gradient(white,white) center / 2px 47% no-repeat, var(--primary);
-}
+.schedule-art svg { width: 58%; height: 58%; }
 
 .today-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .55rem; margin-block: .7rem 1.2rem; }
 .action-tile { display: flex; align-items: center; gap: .58rem; min-height: 58px; padding: .52rem .65rem; }
@@ -403,15 +356,8 @@ button:enabled, summary { cursor: pointer; }
 .add-choices .action-tile { padding: .8rem; min-height: 4.4rem; }
 .add-choices .action-icon { width: 2.65rem; height: 2.65rem; }
 .add-choices .action-tile strong { font-size: 1rem; }
-.add-choices .chevron { color: var(--primary); }
-
-.glyph-plus, .glyph-search, .glyph-note { position: relative; display: block; width: 1rem; height: 1rem; }
-.glyph-plus::before, .glyph-plus::after { content: ""; position: absolute; background: currentColor; border-radius: 2px; }
-.glyph-plus::before { inset: calc(50% - 1px) 0 auto; height: 2px; }
-.glyph-plus::after { inset: 0 calc(50% - 1px) 0 auto; width: 2px; }
-.glyph-search { width: .84rem; height: .84rem; border: 2px solid currentColor; border-radius: 50%; margin: -.15rem .12rem 0 0; }
-.glyph-search::after { content: ""; position: absolute; right: -.33rem; bottom: -.13rem; width: .36rem; height: 2px; transform: rotate(45deg); border-radius: 2px; background: currentColor; }
-.glyph-note { border: 2px solid currentColor; border-radius: 3px; background: linear-gradient(currentColor, currentColor) center 35% / 64% 1px no-repeat, linear-gradient(currentColor, currentColor) center 67% / 64% 1px no-repeat; }
+.action-icon svg { width: 1.15rem; height: 1.15rem; }
+.add-choices .action-icon svg { width: 1.3rem; height: 1.3rem; }
 
 .follow-up-lists { display: grid; gap: 1.15rem; }
 .follow-up-list h2 { display: flex; align-items: center; gap: .48rem; margin-bottom: .48rem; font-size: 1.06rem; font-weight: 700; }
@@ -420,7 +366,7 @@ button:enabled, summary { cursor: pointer; }
 
 .empty-state { padding: 1.8rem 1rem; text-align: center; }
 .patient-search { position: relative; color: var(--primary-deep); }
-.patient-search > svg { position: absolute; inset-inline-start: 1rem; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.patient-search > svg { position: absolute; inset-inline-start: 1rem; top: 50%; width: 1.15rem; height: 1.15rem; transform: translateY(-50%); pointer-events: none; }
 .patient-search > input { min-height: 3.25rem; padding-inline: 2.75rem 3rem; background: var(--surface); }
 .sort-row {
   display: flex;
@@ -457,7 +403,8 @@ button:enabled, summary { cursor: pointer; }
 .clinic-chip--warn { border-color: transparent; background: var(--warn-soft); color: var(--warn-ink); }
 .clinic-chip--warn.is-active { border-color: var(--warn); background: var(--warn); color: white; }
 
-.patient-search > button { position: absolute; inset-block-start: 50%; inset-inline-end: .2rem; transform: translateY(-50%); min-width: 44px; min-height: 44px; border-radius: .6rem; color: var(--primary-deep); font-size: 1.5rem; line-height: 1; }
+.patient-search > button { position: absolute; inset-block-start: 50%; inset-inline-end: .2rem; display: grid; place-items: center; transform: translateY(-50%); min-width: 44px; min-height: 44px; border-radius: .6rem; color: var(--primary-deep); }
+.patient-search > button svg { width: 1.05rem; height: 1.05rem; }
 .patient-search > button:hover { background: var(--primary-soft); }
 .patient-search > button:active { transform: translateY(-50%) scale(0.98); }
 
@@ -498,6 +445,7 @@ button:enabled, summary { cursor: pointer; }
   border-radius: 50%;
   color: var(--primary-deep);
 }
+.patient-row-chevron svg { width: .85rem; height: .85rem; }
 
 .patient-row-footer, .patient-row > .patient-tags { display: contents; }
 .patient-row-date { display: inline-flex; align-items: center; gap: .33rem; }
@@ -517,15 +465,7 @@ button:enabled, summary { cursor: pointer; }
 .patient-tag[data-tone="attention"] { background: var(--danger-soft); color: var(--danger); }
 .patient-tag[data-tone="overdue"] { background: var(--warn-soft); color: var(--warn-ink); }
 .patient-tag[data-tone="today"] { background: var(--mint); color: var(--teal); }
-.patient-calendar {
-  position: relative;
-  flex: none;
-  width: .86rem;
-  height: .8rem;
-  border: 1.5px solid currentColor;
-  border-radius: .2rem;
-}
-.patient-calendar::before { content: ""; position: absolute; inset: .17rem 0 auto; border-top: 1.5px solid currentColor; }
+.patient-calendar { display: block; flex: none; width: .95rem; height: .95rem; }
 
 .patient-identity { display: grid; gap: .85rem; margin-block-end: .85rem; }
 .identity-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem 1rem; }
@@ -550,6 +490,7 @@ button:enabled, summary { cursor: pointer; }
 .identity-tool--danger { border-color: var(--danger); color: var(--danger); }
 .identity-tool--danger:hover { background: var(--danger-soft); }
 .identity-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0; padding-top: .85rem; border-top: 1px solid var(--line); }
+.identity-meta:has(.identity-tile:only-child) { grid-template-columns: 1fr; }
 .identity-tile {
   display: flex;
   flex-wrap: wrap;
@@ -571,7 +512,7 @@ button:enabled, summary { cursor: pointer; }
 .identity-tile--visit[data-tone="today"] { background: var(--mint); color: var(--teal-deep); }
 .identity-label { display: block; color: var(--muted); font-size: .68rem; font-weight: 500; line-height: 1.35; }
 .identity-call-icon { display: grid; place-items: center; flex: none; width: 1.15rem; height: 1.15rem; }
-.identity-call-icon svg { display: block; }
+.identity-call-icon svg { width: 100%; height: 100%; }
 .profile-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .profile-actions .clinic-button { padding-inline: .35rem; font-size: .88rem; }
 @media (max-width: 430px) {
@@ -650,6 +591,7 @@ body:has(.confirm-dialog[open]) { overflow: hidden; }
 }
 .confirm-dialog h2 { font-size: 1.25rem; font-weight: 800; line-height: 1.4; overflow-wrap: anywhere; }
 .confirm-dialog p { margin-top: .45rem; color: var(--ink-soft); font-size: 1rem; font-weight: 500; line-height: 1.7; overflow-wrap: anywhere; }
+.confirm-dialog .confirm-error { color: var(--danger); font-weight: 700; }
 .confirm-actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: 1rem; }
 
 .profile-tabs {
@@ -725,6 +667,65 @@ body:has(.confirm-dialog[open]) { overflow: hidden; }
 .profile-flag-list { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .65rem; }
 .profile-flag-list > span { padding: .22rem .55rem; border-radius: var(--radius-chip); background: var(--warn-soft); color: var(--warn-ink); font-size: .75rem; font-weight: 700; }
 .profile-flag-list > p { color: var(--muted); font-size: .82rem; }
+.medical-images { display: grid; gap: .5rem; margin-top: .85rem; }
+.medical-image {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin: 0;
+  padding: .4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+.medical-image > .medical-thumb {
+  flex: 0 0 4.5rem;
+  width: 4.5rem;
+  height: 4.5rem;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface-soft);
+}
+.medical-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.medical-image figcaption {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .15rem .6rem;
+  min-width: 0;
+  padding: 0;
+}
+.medical-image figcaption strong { font-size: .88rem; }
+.medical-image figcaption time { color: var(--muted); font-size: .78rem; font-weight: 600; }
+.medical-viewer { display: none; }
+.medical-viewer[open] {
+  display: flex;
+  overflow: hidden;
+  position: fixed;
+  inset: 0;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: var(--ink);
+}
+.medical-viewer::backdrop { background: var(--ink); }
+.medical-viewer img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.medical-viewer-close {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: max(.75rem, env(safe-area-inset-top));
+  inset-inline-start: .75rem;
+}
+.medical-kind { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .45rem; }
 
 .add-sheet {
   position: fixed;

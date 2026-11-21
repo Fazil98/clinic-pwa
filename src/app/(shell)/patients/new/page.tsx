@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { MedicalThumb } from "@/components/MedicalThumb";
 import {
   Chip,
   FieldLabel,
@@ -12,10 +13,12 @@ import {
   TextInput,
 } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
-import { ar, gynReasonsAr } from "@/lib/ar";
+import { ar, gynReasonsAr, medicalImageKindAr } from "@/lib/ar";
+import { compressMedicalImage } from "@/lib/compress-image";
 import { estimateGestationalWeek } from "@/lib/dates";
 import { healthFlagLabel, patientTypeLabel } from "@/lib/labels";
-import type { HealthFlag, PatientType } from "@/lib/types";
+import { storeMedicalImage } from "@/lib/patient-files";
+import type { HealthFlag, MedicalImageKind, PatientType } from "@/lib/types";
 import { useClientToday } from "@/lib/use-client-today";
 
 const types: PatientType[] = [
@@ -26,13 +29,27 @@ const types: PatientType[] = [
 ];
 
 const flags = Object.keys(healthFlagLabel) as HealthFlag[];
+const imageKinds = Object.keys(medicalImageKindAr) as MedicalImageKind[];
+
+interface DraftImage {
+  id: string;
+  kind: MedicalImageKind;
+  name: string;
+  preview: string;
+  blob: Blob;
+}
 
 export default function NewPatientPage() {
   const today = useClientToday();
   const router = useRouter();
-  const { addPatient } = useClinic();
+  const { addPatient, updatePatient } = useClinic();
+  const imageInputId = useId();
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const createdId = useRef<string | null>(null);
   const [step, setStep] = useState(1);
   const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
@@ -47,6 +64,17 @@ export default function NewPatientPage() {
   const [babyNotes, setBabyNotes] = useState("");
   const [mainReason, setMainReason] = useState("");
   const [healthFlags, setHealthFlags] = useState<HealthFlag[]>([]);
+  const [imageKind, setImageKind] = useState<MedicalImageKind>("ultrasound");
+  const [drafts, setDrafts] = useState<DraftImage[]>([]);
+  const [preparingImage, setPreparingImage] = useState(false);
+  const draftsRef = useRef(drafts);
+  draftsRef.current = drafts;
+
+  useEffect(() => {
+    return () => {
+      draftsRef.current.forEach((draft) => URL.revokeObjectURL(draft.preview));
+    };
+  }, []);
   const [allergyNote, setAllergyNote] = useState("");
   const [medicines, setMedicines] = useState("");
   const [historyNotes, setHistoryNotes] = useState("");
@@ -62,7 +90,7 @@ export default function NewPatientPage() {
     [dueDate, lmpDate, today],
   );
 
-  const canStep1 = fullName.trim().length > 1 && phone.trim().length > 5;
+  const canStep1 = fullName.trim().length > 1;
 
   function toggleFlag(flag: HealthFlag) {
     setHealthFlags((prev) =>
@@ -70,9 +98,8 @@ export default function NewPatientPage() {
     );
   }
 
-  async function save(andOpen: boolean) {
-    setSaveError("");
-    const patient = await addPatient({
+  function patientFields() {
+    return {
       fullName: fullName.trim(),
       phone: phone.trim(),
       age: age ? Number(age) : undefined,
@@ -93,13 +120,88 @@ export default function NewPatientPage() {
       medicines: medicines.trim() || undefined,
       historyNotes: historyNotes.trim() || undefined,
       highRisk,
-      bloodType: "unknown",
-    });
-    if (!patient) {
-      setSaveError(ar.common.saveFailed);
-      return;
+      bloodType: "unknown" as const,
+    };
+  }
+
+  async function addDrafts(files: File[]) {
+    if (preparingImage || savingRef.current || files.length === 0) return;
+    setPreparingImage(true);
+    setSaveError("");
+    const next: DraftImage[] = [];
+    let unsupported = false;
+    for (const file of files) {
+      try {
+        const blob = await compressMedicalImage(file);
+        next.push({
+          id: crypto.randomUUID(),
+          kind: imageKind,
+          name: file.name || "image.jpg",
+          preview: URL.createObjectURL(blob),
+          blob,
+        });
+      } catch (caught) {
+        unsupported = caught instanceof Error && caught.message === "unsupported";
+        if (!unsupported) setSaveError(ar.common.saveFailed);
+      }
     }
-    if (andOpen) router.push(`/patients/${patient.id}`);
+    if (unsupported) setSaveError(ar.patient.imagesUnsupported);
+    setDrafts((current) => [...next, ...current]);
+    setPreparingImage(false);
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  }
+
+  function removeDraft(id: string) {
+    setDrafts((current) => {
+      const found = current.find((item) => item.id === id);
+      if (found) URL.revokeObjectURL(found.preview);
+      return current.filter((item) => item.id !== id);
+    });
+  }
+
+  async function save(andOpen: boolean) {
+    if (savingRef.current || preparingImage || !canStep1) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError("");
+    const fields = patientFields();
+    let id = createdId.current;
+    if (!id) {
+      const patient = await addPatient(fields);
+      if (!patient) {
+        savingRef.current = false;
+        setSaving(false);
+        setSaveError(ar.common.saveFailed);
+        return;
+      }
+      id = patient.id;
+      createdId.current = id;
+    } else {
+      const updated = await updatePatient(id, fields);
+      if (!updated) {
+        savingRef.current = false;
+        setSaving(false);
+        setSaveError(ar.common.saveFailed);
+        return;
+      }
+    }
+    for (const draft of draftsRef.current) {
+      const stored = await storeMedicalImage({
+        patientId: id,
+        kind: draft.kind,
+        blob: draft.blob,
+        fileName: draft.name,
+      });
+      if (!stored) {
+        savingRef.current = false;
+        setSaving(false);
+        setSaveError(ar.common.saveFailed);
+        return;
+      }
+      URL.revokeObjectURL(draft.preview);
+      setDrafts((current) => current.filter((item) => item.id !== draft.id));
+    }
+    if (andOpen) router.push(`/patients/${id}`);
     else router.push("/patients");
   }
 
@@ -144,45 +246,41 @@ export default function NewPatientPage() {
               placeholder={ar.newPatient.phonePh}
               type="tel"
               autoComplete="tel"
-              required
               dir="ltr"
             />
           </div>
-          <details className="form-section">
-            <summary className="flex min-h-11 items-center gap-2 font-bold text-[var(--primary)]"><span aria-hidden="true">+</span>{ar.newPatient.optionalDetails}</summary>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <FieldLabel htmlFor="newPatient-age">{ar.newPatient.age}</FieldLabel>
-                  <TextInput id="newPatient-age"
-                    value={age}
-                    onChange={(e) => setAge(e.target.value.replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) - (digit <= "٩" ? 0x0660 : 0x06f0))).replace(/\D/g, ""))}
-                    placeholder={ar.newPatient.agePh}
-                    inputMode="numeric"
-                  />
-                </div>
-                <div>
-                  <FieldLabel htmlFor="newPatient-area">{ar.newPatient.area}</FieldLabel>
-                  <TextInput id="newPatient-area"
-                    value={area}
-                    onChange={(e) => setArea(e.target.value)}
-                    placeholder={ar.newPatient.areaPh}
-                  />
-                </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <FieldLabel htmlFor="newPatient-age">{ar.newPatient.age}</FieldLabel>
+              <TextInput id="newPatient-age"
+                value={age}
+                onChange={(e) => setAge(e.target.value.replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) - (digit <= "٩" ? 0x0660 : 0x06f0))).replace(/\D/g, ""))}
+                placeholder={ar.newPatient.agePh}
+                inputMode="numeric"
+              />
             </div>
-          </details>
+            <div>
+              <FieldLabel htmlFor="newPatient-area">{ar.newPatient.area}</FieldLabel>
+              <TextInput id="newPatient-area"
+                value={area}
+                onChange={(e) => setArea(e.target.value)}
+                placeholder={ar.newPatient.areaPh}
+              />
+            </div>
+          </div>
           <PrimaryButton
             type="button"
-            disabled={!canStep1}
+            disabled={!canStep1 || saving}
             onClick={() => setStep(2)}
           >
             {ar.newPatient.saveContinue}
           </PrimaryButton>
           <SecondaryButton
             type="button"
-            disabled={!canStep1}
+            disabled={!canStep1 || saving}
             onClick={() => save(true)}
           >
-            {ar.newPatient.saveLater}
+            {saving ? ar.common.saving : ar.newPatient.saveLater}
           </SecondaryButton>
         </div>
       ) : null}
@@ -401,10 +499,62 @@ export default function NewPatientPage() {
             </div>
           </div>
 
-          <PrimaryButton type="button" onClick={() => save(true)}>
-            {ar.newPatient.done}
+          <div className="form-section space-y-3">
+            <h2 className="text-lg font-bold">{ar.patient.imagesTitle}</h2>
+            <p className="text-sm leading-6 text-[var(--muted)]">{ar.patient.imagesBody}</p>
+            <div>
+              <p className="text-sm font-semibold">{ar.patient.imagesKind}</p>
+              <div className="medical-kind" role="group" aria-label={ar.patient.imagesKind}>
+                {imageKinds.map((item) => (
+                  <Chip
+                    key={item}
+                    active={imageKind === item}
+                    onClick={() => {
+                      if (!saving && !preparingImage) setImageKind(item);
+                    }}
+                  >
+                    {medicalImageKindAr[item]}
+                  </Chip>
+                ))}
+              </div>
+            </div>
+            <button
+              type="button"
+              className="clinic-button clinic-button--primary w-full"
+              disabled={saving || preparingImage}
+              onClick={() => imageInputRef.current?.click()}
+            >
+              {preparingImage ? ar.common.saving : ar.patient.imagesAdd}
+            </button>
+            <input
+              ref={imageInputRef}
+              id={imageInputId}
+              className="sr-only"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              disabled={saving || preparingImage}
+              onChange={(event) => void addDrafts([...(event.target.files ?? [])])}
+            />
+            {drafts.length > 0 ? (
+              <div className="medical-images">
+                {drafts.map((draft) => (
+                  <MedicalThumb
+                    key={draft.id}
+                    src={draft.preview}
+                    label={medicalImageKindAr[draft.kind]}
+                    onDelete={() => removeDraft(draft.id)}
+                    deleteDisabled={saving}
+                  />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <PrimaryButton type="button" disabled={saving || preparingImage} onClick={() => save(true)}>
+            {saving ? ar.common.saving : ar.newPatient.done}
           </PrimaryButton>
-          <SecondaryButton type="button" onClick={() => setStep(2)}>
+          <SecondaryButton type="button" disabled={saving || preparingImage} onClick={() => setStep(2)}>
             {ar.newPatient.back}
           </SecondaryButton>
         </div>

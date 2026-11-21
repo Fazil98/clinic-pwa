@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import { ar } from "@/lib/ar";
 import { parseISODate } from "@/lib/dates";
 import { patientStatusLabel } from "@/lib/labels";
@@ -25,7 +26,7 @@ export function PatientRow({
           <p className="patient-row-name" dir="auto">{patient.fullName}</p>
           <p className="patient-row-condition">{patientStatusLabel(patient, today)}</p>
         </div>
-        <span className="patient-row-chevron" aria-hidden="true"><span className="chevron" /></span>
+        <span className="patient-row-chevron" aria-hidden="true"><Icon name="chevronForward" /></span>
       </div>
 
       {patient.highRisk ? (
@@ -34,12 +35,12 @@ export function PatientRow({
         </p>
       ) : null}
 
-      {(!badge || nextVisitDate) && (
+      {((!badge && patient.phone.trim()) || nextVisitDate || badge) && (
         <div className="patient-row-footer">
-          {!badge ? <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi> : null}
+          {!badge && patient.phone.trim() ? <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi> : null}
           {nextVisitDate ? (
             <span className="patient-row-date">
-              <span className="patient-calendar" aria-hidden="true" />
+              <Icon name="calendar" className="patient-calendar" />
               <time dateTime={nextVisitDate}>{shortDate.format(parseISODate(nextVisitDate))}</time>
             </span>
           ) : null}

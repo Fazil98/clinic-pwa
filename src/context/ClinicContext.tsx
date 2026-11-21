@@ -6,6 +6,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -18,6 +19,12 @@ import {
   type PatientRow,
   type TimelineRow,
 } from "@/lib/clinic-db";
+import {
+  removePatientRecords,
+  removeTimelineEntry,
+  restorePatientRecords,
+  restoreTimelineEntry,
+} from "@/lib/clinic-utils";
 import { createClient } from "@/lib/supabase/client";
 import { supabasePublicEnv } from "@/lib/supabase/env";
 import type { Patient, TimelineEntry } from "@/lib/types";
@@ -75,6 +82,10 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<StaffRole | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const patientsRef = useRef(patients);
+  const timelineRef = useRef(timeline);
+  patientsRef.current = patients;
+  timelineRef.current = timeline;
 
   const load = useCallback(async () => {
     clearLegacyStore();
@@ -236,26 +247,87 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
 
   const deletePatient = useCallback(async (id: string) => {
     if (!canDeleteRecords(role)) return false;
-    const { data, error } = await createClient()
-      .from("patients")
-      .delete()
-      .eq("id", id)
-      .select("id");
-    if (error || !data?.length) return false;
-    setPatients((prev) => prev.filter((patient) => patient.id !== id));
-    setTimeline((prev) => prev.filter((entry) => entry.patientId !== id));
+    const current = { patients: patientsRef.current, timeline: timelineRef.current };
+    const removed = current.patients.find((patient) => patient.id === id);
+    if (!removed) return false;
+    const removedEntries = current.timeline.filter((entry) => entry.patientId === id);
+    const next = removePatientRecords(current, id);
+    patientsRef.current = next.patients;
+    timelineRef.current = next.timeline;
+    setPatients(next.patients);
+    setTimeline(next.timeline);
+
+    const supabase = createClient();
+    const files = await supabase.from("patient_files").select("storage_path").eq("patient_id", id);
+    if (files.error) {
+      const restored = restorePatientRecords(
+        { patients: patientsRef.current, timeline: timelineRef.current },
+        removed,
+        removedEntries,
+      );
+      patientsRef.current = restored.patients;
+      timelineRef.current = restored.timeline;
+      setPatients(restored.patients);
+      setTimeline(restored.timeline);
+      return false;
+    }
+    const paths = ((files.data ?? []) as { storage_path: string }[]).map((file) => file.storage_path);
+    const { data, error } = await supabase.from("patients").delete().eq("id", id).select("id");
+    if (error || !data?.length) {
+      const restored = restorePatientRecords(
+        { patients: patientsRef.current, timeline: timelineRef.current },
+        removed,
+        removedEntries,
+      );
+      patientsRef.current = restored.patients;
+      timelineRef.current = restored.timeline;
+      setPatients(restored.patients);
+      setTimeline(restored.timeline);
+      return false;
+    }
+    if (paths.length > 0) {
+      await supabase.storage.from("patient-files").remove(paths);
+    }
+    const cleaned = removePatientRecords(
+      { patients: patientsRef.current, timeline: timelineRef.current },
+      id,
+    );
+    patientsRef.current = cleaned.patients;
+    timelineRef.current = cleaned.timeline;
+    setPatients(cleaned.patients);
+    setTimeline(cleaned.timeline);
     return true;
   }, [role]);
 
   const deleteTimelineEntry = useCallback(async (id: string) => {
     if (!canDeleteRecords(role)) return false;
+    const current = { patients: patientsRef.current, timeline: timelineRef.current };
+    const removed = current.timeline.find((entry) => entry.id === id);
+    if (!removed) return false;
+    const next = removeTimelineEntry(current, id);
+    timelineRef.current = next.timeline;
+    setTimeline(next.timeline);
+
     const { data, error } = await createClient()
       .from("timeline_entries")
       .delete()
       .eq("id", id)
       .select("id");
-    if (error || !data?.length) return false;
-    setTimeline((prev) => prev.filter((entry) => entry.id !== id));
+    if (error || !data?.length) {
+      const restored = restoreTimelineEntry(
+        { patients: patientsRef.current, timeline: timelineRef.current },
+        removed,
+      );
+      timelineRef.current = restored.timeline;
+      setTimeline(restored.timeline);
+      return false;
+    }
+    const cleaned = removeTimelineEntry(
+      { patients: patientsRef.current, timeline: timelineRef.current },
+      id,
+    );
+    timelineRef.current = cleaned.timeline;
+    setTimeline(cleaned.timeline);
     return true;
   }, [role]);
 

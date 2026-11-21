@@ -19,6 +19,8 @@ export type VisitType =
 
 export type TimelineKind = "visit" | "note";
 
+export type MedicalImageKind = "ultrasound" | "lab" | "other";
+
 export type BloodType =
   | "A+"
   | "A-"
@@ -58,6 +60,15 @@ export interface Patient {
   historyNotes?: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PatientFile {
+  id: string;
+  patientId: string;
+  kind: MedicalImageKind;
+  fileName: string;
+  storagePath: string;
+  createdAt: string;
 }
 
 export interface TimelineEntry {

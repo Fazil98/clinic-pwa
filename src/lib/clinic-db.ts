@@ -159,7 +159,7 @@ export function patientToInsert(input: PatientInput) {
 export function patientToUpdate(patch: Partial<Patient>) {
   const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if ("fullName" in patch && patch.fullName) row.full_name = patch.fullName.trim();
-  if ("phone" in patch && patch.phone) row.phone = patch.phone.trim();
+  if ("phone" in patch) row.phone = (patch.phone ?? "").trim();
   if ("age" in patch) row.age = patch.age ?? null;
   if ("area" in patch) row.area = text(patch.area) ?? null;
   if ("emergencyName" in patch) row.emergency_name = text(patch.emergencyName) ?? null;

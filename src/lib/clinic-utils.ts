@@ -158,3 +158,29 @@ export function removeTimelineEntry(records: ClinicRecords, entryId: string): Cl
     timeline: records.timeline.filter((entry) => entry.id !== entryId),
   };
 }
+
+/** Put a patient and her visits back when a delete did not stick. Existing rows stay. */
+export function restorePatientRecords(
+  records: ClinicRecords,
+  patient: Patient,
+  entries: TimelineEntry[],
+): ClinicRecords {
+  const patients = records.patients.some((item) => item.id === patient.id)
+    ? records.patients
+    : [patient, ...records.patients];
+  const ids = new Set(records.timeline.map((entry) => entry.id));
+  const missing = entries.filter((entry) => entry.patientId === patient.id && !ids.has(entry.id));
+  return {
+    patients,
+    timeline: missing.length === 0 ? records.timeline : [...missing, ...records.timeline],
+  };
+}
+
+/** Put one visit or note back when a delete did not stick. */
+export function restoreTimelineEntry(records: ClinicRecords, entry: TimelineEntry): ClinicRecords {
+  if (records.timeline.some((item) => item.id === entry.id)) return records;
+  return {
+    patients: records.patients,
+    timeline: [entry, ...records.timeline],
+  };
+}

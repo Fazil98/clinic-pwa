@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Chip,
   EmptyState,
@@ -31,7 +31,9 @@ export default function EditPatientPage() {
   const { getPatient, updatePatient } = useClinic();
   const patient = getPatient(params.id);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const savingRef = useRef(false);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -78,7 +80,10 @@ export default function EditPatientPage() {
   }
 
   async function onSave() {
-    if (!fullName.trim() || !phone.trim()) return;
+    if (savingRef.current || !fullName.trim()) return;
+    savingRef.current = true;
+    setSaving(true);
+    setSaveError("");
     const saved = await updatePatient(patient!.id, {
       fullName: fullName.trim(),
       phone: phone.trim(),
@@ -94,6 +99,8 @@ export default function EditPatientPage() {
       highRisk,
     });
     if (!saved) {
+      savingRef.current = false;
+      setSaving(false);
       setSaveError(ar.common.saveFailed);
       return;
     }
@@ -220,8 +227,8 @@ export default function EditPatientPage() {
           </button>
         </section>
 
-        <PrimaryButton type="button" onClick={onSave}>
-          {ar.edit.save}
+        <PrimaryButton type="button" disabled={saving || saved} onClick={onSave}>
+          {saving ? ar.common.saving : ar.edit.save}
         </PrimaryButton>
       </div>
     </div>

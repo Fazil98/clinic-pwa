@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { Icon } from "@/components/Icon";
 import { TextInput } from "@/components/ui";
 import { ar } from "@/lib/ar";
 
@@ -13,10 +14,7 @@ export function PatientSearch({
 
   return (
     <div className="patient-search">
-      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
-        <circle cx="10.5" cy="10.5" r="6" />
-        <path d="m15 15 4.5 4.5" />
-      </svg>
+      <Icon name="search" />
       <TextInput
         ref={input}
         value={query}
@@ -31,7 +29,7 @@ export function PatientSearch({
           onChange("");
           input.current?.focus();
         }}>
-          <span aria-hidden="true">×</span>
+          <Icon name="x" />
         </button>
       )}
     </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ButtonHTMLAttributes, type ComponentPropsWithRef, type ReactNode, type TextareaHTMLAttributes } from "react";
+import { Icon } from "@/components/Icon";
 import { ar } from "@/lib/ar";
 
 export function PageHeader({
@@ -33,7 +34,7 @@ export function PageHeader({
 export function AppBack({ href }: { href: string }) {
   return (
     <Link href={href} className="icon-button app-back" aria-label={ar.common.back}>
-      <span className="chevron" aria-hidden="true" />
+      <Icon name="chevronBack" />
     </Link>
   );
 }

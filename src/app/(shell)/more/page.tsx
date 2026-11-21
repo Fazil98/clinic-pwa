@@ -1,5 +1,6 @@
 "use client";
 
+import { Icon } from "@/components/Icon";
 import { usePwa } from "@/components/PwaProvider";
 import { StaffAccount } from "@/components/StaffAccount";
 import { Card, PageHeader, PrimaryButton } from "@/components/ui";
@@ -17,7 +18,7 @@ export default function MorePage() {
         <StaffAccount />
         <Card className="install-card">
           <div className="flex items-center gap-3">
-            <span className="action-icon action-icon--mint" aria-hidden="true"><span className="glyph-plus" /></span>
+            <span className="action-icon action-icon--mint" aria-hidden="true"><Icon name="smartphone" /></span>
             <h2 className="text-lg font-extrabold">{ar.more.installAppTitle}</h2>
           </div>
           {canInstall ? (

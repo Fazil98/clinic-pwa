@@ -40,9 +40,11 @@ export default function AddVisitPickPatientPage() {
               className="clinic-card"
             >
               <p className="text-lg font-bold">{patient.fullName}</p>
-              <p className="text-[var(--muted)]" dir="auto">
-                <bdi dir="ltr">{patient.phone}</bdi>
-              </p>
+              {patient.phone.trim() ? (
+                <p className="text-[var(--muted)]" dir="auto">
+                  <bdi dir="ltr">{patient.phone}</bdi>
+                </p>
+              ) : null}
               <p className="mt-1 text-sm">
                 {patientStatusLabel(patient, today)}
               </p>
