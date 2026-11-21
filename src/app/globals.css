@@ -55,9 +55,9 @@
   --mark-ink: #e6fff7;
   --scrim: #1a274473;
   --foreground: var(--ink);
-  --radius-card: 1.15rem;
-  --radius-control: .9rem;
-  --radius-chip: 999px;
+  --radius-card: 0.55rem;
+  --radius-control: 0.4rem;
+  --radius-chip: 0.4rem;
   --shadow-card: 0 1px 2px #1a27440a, 0 8px 20px #1a27440d;
   --shadow-dock: 0 -8px 24px #1a274414;
   --dock-height: calc(5rem + env(safe-area-inset-bottom));
@@ -114,6 +114,12 @@ button:enabled, summary { cursor: pointer; }
 
 .clinic-sidebar { padding-top: env(safe-area-inset-top); }
 
+.login-screen {
+  width: min(100%, 28rem);
+  margin-inline: auto;
+  padding: max(2.5rem, env(safe-area-inset-top)) 1rem 3rem;
+}
+
 .clinic-brand {
   max-width: 53rem;
   margin-inline: auto;
@@ -131,8 +137,9 @@ button:enabled, summary { cursor: pointer; }
 .clinic-brand-link:active { transform: scale(0.98); }
 
 .clinic-brand strong, .clinic-brand small { display: block; }
-.clinic-brand strong { font-weight: 800; }
+.clinic-brand strong { font-weight: 800; font-size: .95rem; line-height: 1.3; }
 .clinic-brand small { color: var(--muted); margin-top: .13rem; font-size: .72rem; font-weight: 500; }
+.clinic-mark-icon { display: block; width: 1.35rem; height: 1.35rem; }
 
 .clinic-mark {
   display: grid;
@@ -171,7 +178,7 @@ button:enabled, summary { cursor: pointer; }
   justify-content: center;
   gap: .15rem;
   min-height: 3.55rem;
-  border-radius: 1rem;
+  border-radius: var(--radius-control);
   color: var(--muted);
   font-size: .75rem;
   font-weight: 700;
@@ -187,7 +194,7 @@ button:enabled, summary { cursor: pointer; }
   place-items: center;
   width: 3.15rem;
   height: 1.9rem;
-  border-radius: 999px;
+  border-radius: var(--radius-control);
 }
 
 .nav-icon svg { width: 1.2rem; height: 1.2rem; }
@@ -520,10 +527,29 @@ button:enabled, summary { cursor: pointer; }
 }
 .patient-calendar::before { content: ""; position: absolute; inset: .17rem 0 auto; border-top: 1.5px solid currentColor; }
 
-.patient-identity { margin-block-end: .85rem; }
-.identity-header { display: grid; gap: .4rem; }
+.patient-identity { display: grid; gap: .85rem; margin-block-end: .85rem; }
+.identity-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: .75rem 1rem; }
 .identity-title { color: var(--ink); font-size: clamp(1.38rem, 5.5vw, 1.9rem); font-weight: 800; line-height: 1.3; overflow-wrap: anywhere; }
-.identity-meta { display: flex; flex-wrap: wrap; gap: .45rem; margin-block: .7rem .8rem; }
+.identity-header .patient-tags { margin-top: .45rem; }
+.identity-tools { display: flex; flex-wrap: wrap; gap: .4rem; }
+.identity-tool {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding-inline: .85rem;
+  border: 1px solid var(--boundary);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--primary-deep);
+  font-size: .88rem;
+  font-weight: 700;
+}
+.identity-tool:hover { background: var(--primary-soft); }
+.identity-tool:active { transform: scale(0.98); }
+.identity-tool--danger { border-color: var(--danger); color: var(--danger); }
+.identity-tool--danger:hover { background: var(--danger-soft); }
+.identity-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin: 0; padding-top: .85rem; border-top: 1px solid var(--line); }
 .identity-tile {
   display: flex;
   flex-wrap: wrap;
@@ -541,11 +567,18 @@ button:enabled, summary { cursor: pointer; }
 }
 .identity-tile--call { color: var(--primary-deep); }
 .identity-tile--call:hover { background: var(--primary-soft); }
+.identity-tile--visit[data-tone="overdue"] { background: var(--warn-soft); color: var(--warn-ink); }
+.identity-tile--visit[data-tone="today"] { background: var(--mint); color: var(--teal-deep); }
 .identity-label { display: block; color: var(--muted); font-size: .68rem; font-weight: 500; line-height: 1.35; }
 .identity-call-icon { display: grid; place-items: center; flex: none; width: 1.15rem; height: 1.15rem; }
 .identity-call-icon svg { display: block; }
 .profile-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; }
 .profile-actions .clinic-button { padding-inline: .35rem; font-size: .88rem; }
+@media (max-width: 430px) {
+  .identity-tools { flex: 1 0 100%; }
+  .identity-tool { flex: 1; }
+  .identity-meta { grid-template-columns: 1fr; }
+}
 
 .timeline-list { display: grid; gap: .75rem; }
 .timeline-entry {
@@ -592,9 +625,6 @@ button:enabled, summary { cursor: pointer; }
   font-weight: 700;
 }
 .timeline-delete:hover { text-decoration: underline; text-underline-offset: .18rem; }
-.profile-manage { display: grid; gap: .15rem; }
-.profile-manage .clinic-button { width: 100%; }
-.profile-manage .timeline-delete { justify-content: center; margin-top: 0; font-size: .95rem; }
 
 .confirm-dialog {
   width: min(26rem, calc(100vw - 2rem));
@@ -786,7 +816,7 @@ body:has(.add-sheet[open]) { overflow: hidden; }
   flex: none;
   width: 4.5rem;
   height: 2.75rem;
-  border-radius: var(--radius-chip);
+  border-radius: 999px;
   background: var(--boundary);
   transition: background-color 160ms;
 }
@@ -843,6 +873,8 @@ body:has(.add-sheet[open]) { overflow: hidden; }
   .clinic-sidebar { position: sticky; top: 0; height: 100dvh; align-self: start; background: var(--surface); border-inline-end: 1px solid var(--line); padding: 1.7rem 1rem; }
   .clinic-brand { padding: 0 .55rem 1.35rem; }
   .clinic-mark { width: 2.55rem; height: 2.55rem; }
+  .clinic-mark-icon { width: 1.55rem; height: 1.55rem; }
+  .clinic-brand strong { max-width: 8.4rem; }
   .clinic-nav { position: static; padding: 0; border: 0; box-shadow: none; }
   .clinic-nav-items { grid-template-columns: 1fr; gap: .3rem; }
   .clinic-nav-link { flex-direction: row; justify-content: flex-start; padding-inline: .7rem; gap: .6rem; min-height: 3rem; font-size: .95rem; }

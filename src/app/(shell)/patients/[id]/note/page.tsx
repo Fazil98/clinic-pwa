@@ -23,6 +23,7 @@ export default function AddNotePage() {
   const patient = getPatient(params.id);
   const [date, setDate] = useState(today);
   const [notes, setNotes] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -35,13 +36,18 @@ export default function AddNotePage() {
     );
   }
 
-  function onSave() {
+  async function onSave() {
     if (!notes.trim()) return;
-    addNote({
+    const entry = await addNote({
       patientId: patient!.id,
       date,
       notes: notes.trim(),
     });
+    if (!entry) {
+      setSaveError(ar.common.saveFailed);
+      return;
+    }
+    setSaveError("");
     setSaved(true);
     setTimeout(() => router.push(`/patients/${patient!.id}`), 500);
   }
@@ -49,6 +55,7 @@ export default function AddNotePage() {
   return (
     <div>
       <SavedToast show={saved} />
+      {saveError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{saveError}</p> : null}
       <PageHeader title={ar.note.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
       <div className="form-panel space-y-5">

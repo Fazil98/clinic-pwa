@@ -32,6 +32,7 @@ export default function NewPatientPage() {
   const router = useRouter();
   const { addPatient } = useClinic();
   const [step, setStep] = useState(1);
+  const [saveError, setSaveError] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
@@ -69,8 +70,9 @@ export default function NewPatientPage() {
     );
   }
 
-  function save(andOpen: boolean) {
-    const patient = addPatient({
+  async function save(andOpen: boolean) {
+    setSaveError("");
+    const patient = await addPatient({
       fullName: fullName.trim(),
       phone: phone.trim(),
       age: age ? Number(age) : undefined,
@@ -93,6 +95,10 @@ export default function NewPatientPage() {
       highRisk,
       bloodType: "unknown",
     });
+    if (!patient) {
+      setSaveError(ar.common.saveFailed);
+      return;
+    }
     if (andOpen) router.push(`/patients/${patient.id}`);
     else router.push("/patients");
   }
@@ -104,6 +110,7 @@ export default function NewPatientPage() {
         subtitle={ar.newPatient.stepOf(step)}
         backHref="/patients"
       />
+      {saveError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{saveError}</p> : null}
 
       <div aria-hidden="true" className="mb-5 flex gap-2">
         {[1, 2, 3].map((n) => (

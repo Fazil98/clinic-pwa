@@ -1,4 +1,4 @@
-import { DEMO_ANCHOR_DATE, isBeforeDay, isSameDay } from "@/lib/dates";
+import { isBeforeDay, isSameDay } from "@/lib/dates";
 import type {
   Patient,
   PatientSort,
@@ -112,7 +112,7 @@ export interface TodayItem {
 export function getTodayItems(
   patients: Patient[],
   entries: TimelineEntry[],
-  today: string = DEMO_ANCHOR_DATE,
+  today: string,
 ): TodayItem[] {
   const items: TodayItem[] = [];
 

@@ -20,7 +20,7 @@ const sorts: { id: PatientSort; label: string }[] = [
 ];
 
 export default function PatientsPage() {
-  const { patients, timeline, ready } = useClinic();
+  const { patients, timeline, ready, loadError } = useClinic();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<PatientSort>("recent");
   const list = useMemo(
@@ -36,6 +36,7 @@ export default function PatientsPage() {
         subtitle={ready ? ar.patients.saved(numberFormat.format(patients.length)) : undefined}
         action={<Link href="/patients/new" className="clinic-link shrink-0">{ar.add.newPatientTitle}</Link>}
       />
+      {loadError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{ar.common.loadFailed}</p> : null}
       <div className="mb-4 space-y-3">
         <PatientSearch query={query} onChange={setQuery} />
         <div role="group" aria-label={ar.patients.sortLabel} className="sort-row">

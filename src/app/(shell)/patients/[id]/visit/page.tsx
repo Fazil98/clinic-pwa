@@ -27,6 +27,7 @@ export default function AddVisitPage() {
   const { getPatient, addVisit } = useClinic();
   const patient = getPatient(params.id);
   const [date, setDate] = useState(today);
+  const [saveError, setSaveError] = useState("");
   const [visitType, setVisitType] = useState<VisitType>("checkup");
   const [notes, setNotes] = useState("");
   const [nextVisitDate, setNextVisitDate] = useState("");
@@ -42,14 +43,19 @@ export default function AddVisitPage() {
     );
   }
 
-  function onSave() {
-    addVisit({
+  async function onSave() {
+    const entry = await addVisit({
       patientId: patient!.id,
       date,
       visitType,
       notes: notes.trim() || "تمت الزيارة",
       nextVisitDate: nextVisitDate || undefined,
     });
+    if (!entry) {
+      setSaveError(ar.common.saveFailed);
+      return;
+    }
+    setSaveError("");
     setSaved(true);
     setTimeout(() => router.push(`/patients/${patient!.id}`), 500);
   }
@@ -57,6 +63,7 @@ export default function AddVisitPage() {
   return (
     <div>
       <SavedToast show={saved} />
+      {saveError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{saveError}</p> : null}
       <PageHeader title={ar.visit.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
       <div className="form-panel space-y-5">

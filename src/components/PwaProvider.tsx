@@ -61,7 +61,7 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     });
 
     navigator.storage?.persist?.().catch(() => {
-      // iOS often refuses persistent storage. Local data stays in localStorage.
+      // iOS often refuses persistent storage. Patient records are not kept in this browser.
     });
 
     const onPrompt = (event: Event) => {

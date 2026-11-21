@@ -31,6 +31,7 @@ export default function EditPatientPage() {
   const { getPatient, updatePatient } = useClinic();
   const patient = getPatient(params.id);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -76,9 +77,9 @@ export default function EditPatientPage() {
     );
   }
 
-  function onSave() {
+  async function onSave() {
     if (!fullName.trim() || !phone.trim()) return;
-    updatePatient(patient!.id, {
+    const saved = await updatePatient(patient!.id, {
       fullName: fullName.trim(),
       phone: phone.trim(),
       age: age ? Number(age) : undefined,
@@ -92,6 +93,11 @@ export default function EditPatientPage() {
       healthFlags,
       highRisk,
     });
+    if (!saved) {
+      setSaveError(ar.common.saveFailed);
+      return;
+    }
+    setSaveError("");
     setSaved(true);
     setTimeout(() => router.push(`/patients/${patient!.id}`), 450);
   }
@@ -99,6 +105,7 @@ export default function EditPatientPage() {
   return (
     <div>
       <SavedToast show={saved} />
+      {saveError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{saveError}</p> : null}
       <PageHeader title={ar.edit.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
       <div className="space-y-5">

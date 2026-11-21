@@ -4,16 +4,16 @@ import { ClinicProvider } from "@/context/ClinicContext";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "العيادة — نساء وتوليد",
-  description: "متابعة المريضات بسهولة لعيادة النساء والتوليد",
-  applicationName: "العيادة",
+  title: "عيادة دكتورة فاطمة",
+  description: "متابعة المريضات بسهولة لعيادة دكتورة فاطمة",
+  applicationName: "عيادة دكتورة فاطمة",
   other: {
     "apple-mobile-web-app-capable": "yes",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "العيادة",
+    title: "د. فاطمة",
   },
   icons: {
     icon: [

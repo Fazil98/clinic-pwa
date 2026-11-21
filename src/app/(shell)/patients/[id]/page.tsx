@@ -22,7 +22,7 @@ export default function PatientDetailPage() {
   const today = useClientToday();
   const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { getPatient, getPatientTimeline, timeline, ready, deletePatient, deleteTimelineEntry } = useClinic();
+  const { getPatient, getPatientTimeline, timeline, ready, canDelete, deletePatient, deleteTimelineEntry } = useClinic();
   const patient = getPatient(params.id);
   const entries = getPatientTimeline(params.id);
   const [tab, setTab] = useState<"timeline" | "profile">("timeline");
@@ -58,15 +58,25 @@ export default function PatientDetailPage() {
           <div className="min-w-0">
             <h1 className="identity-title" dir="auto">{patient.fullName}</h1>
             <p className="identity-condition">{patientStatusLabel(patient, today)}</p>
+            {patient.age || patient.highRisk ? (
+              <div className="patient-tags">
+                {patient.age ? <span className="patient-tag">{ar.patient.agePrefix} {patient.age}</span> : null}
+                {patient.highRisk ? (
+                  <span className="patient-tag" data-tone="attention">{ar.patients.highRisk}</span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-          {patient.age || patient.highRisk ? (
-            <div className="patient-tags">
-              {patient.age ? <span className="patient-tag">{ar.patient.agePrefix} {patient.age}</span> : null}
-              {patient.highRisk ? (
-                <span className="patient-tag" data-tone="attention">{ar.patients.highRisk}</span>
-              ) : null}
-            </div>
-          ) : null}
+          <div className="identity-tools" aria-label={ar.patient.manage}>
+            <Link href={`/patients/${patient.id}/edit`} className="identity-tool">
+              {ar.patient.editDetails}
+            </Link>
+            {canDelete ? (
+              <button type="button" className="identity-tool identity-tool--danger" onClick={() => setPendingDelete({ kind: "patient" })}>
+                {ar.patient.deletePatient}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="identity-meta">
@@ -142,13 +152,15 @@ export default function PatientDetailPage() {
                         {ar.patient.nextVisit} · {formatDisplayDate(entry.nextVisitDate)}
                       </p>
                     ) : null}
-                    <button
-                      type="button"
-                      className="timeline-delete"
-                      onClick={() => setPendingDelete({ kind: "entry", entry })}
-                    >
-                      {ar.patient.deleteEntry}
-                    </button>
+                    {canDelete ? (
+                      <button
+                        type="button"
+                        className="timeline-delete"
+                        onClick={() => setPendingDelete({ kind: "entry", entry })}
+                      >
+                        {ar.patient.deleteEntry}
+                      </button>
+                    ) : null}
                   </div>
                 </Card>
               );
@@ -282,15 +294,6 @@ export default function PatientDetailPage() {
               />
             </dl>
           </Card>
-
-          <section className="profile-manage" aria-label={ar.patient.manage}>
-            <Link href={`/patients/${patient.id}/edit`} className="clinic-button clinic-button--secondary">
-              {ar.patient.editDetails}
-            </Link>
-            <button type="button" className="timeline-delete" onClick={() => setPendingDelete({ kind: "patient" })}>
-              {ar.patient.deletePatient}
-            </button>
-          </section>
         </div>
       )}
       <ConfirmDialog
@@ -304,14 +307,15 @@ export default function PatientDetailPage() {
         confirmLabel={ar.common.delete}
         onConfirm={() => {
           if (pendingDelete?.kind === "entry") {
-            deleteTimelineEntry(pendingDelete.entry.id);
+            const entryId = pendingDelete.entry.id;
             setPendingDelete(null);
+            void deleteTimelineEntry(entryId);
             return;
           }
           const id = patient.id;
           setPendingDelete(null);
           router.replace("/patients");
-          deletePatient(id);
+          void deletePatient(id);
         }}
         onCancel={() => setPendingDelete(null)}
       />

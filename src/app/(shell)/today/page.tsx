@@ -18,7 +18,7 @@ const numberFormat = new Intl.NumberFormat("ar-IQ-u-nu-latn");
 
 export default function TodayPage() {
   const today = useClientToday();
-  const { patients, timeline, ready } = useClinic();
+  const { patients, timeline, ready, loadError } = useClinic();
   const items = getTodayItems(patients, timeline, today);
   const overdue = items.filter((item) => item.status === "overdue");
   const dueToday = items.filter((item) => item.status === "today");
@@ -30,6 +30,7 @@ export default function TodayPage() {
           {dateFormat.format(parseISODate(today))}
         </time>
       </PageHeader>
+      {loadError ? <p className="mb-3 text-sm font-semibold text-[var(--danger)]" role="alert">{ar.common.loadFailed}</p> : null}
 
       <section className="schedule-card" aria-label={ar.today.title}>
         <div className="schedule-art" aria-hidden="true">

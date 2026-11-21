@@ -1,6 +1,3 @@
-/** Fixed calendar day used for mock demo data (not "now"). */
-export const DEMO_ANCHOR_DATE = "2026-11-10";
-
 export function todayISO(): string {
   return toISODate(new Date());
 }

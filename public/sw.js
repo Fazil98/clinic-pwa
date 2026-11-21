@@ -1,14 +1,13 @@
 // Service worker for the clinic app.
 // Scaffolded from the pwa-development skill (stale-while-revalidate, no silent skipWaiting).
 // App-like advice was: cache the shell, keep user data fresh.
-// This build precaches only the shell (offline page, manifest, icons) and
-// runtime-caches pages with stale-while-revalidate. Hashed static files are cache-first.
+// This build precaches only the offline shell and icons.
+// Patient pages are never stored, so a later visitor cannot open someone else's records.
 // next-pwa is not used: Next 16 dev runs on Turbopack, so that webpack plugin never registers a worker.
 
-const SHELL_CACHE = "clinic-shell-v2";
-const PAGE_CACHE = "clinic-pages-v2";
-const STATIC_CACHE = "clinic-static-v2";
-const CURRENT_CACHES = [SHELL_CACHE, PAGE_CACHE, STATIC_CACHE];
+const SHELL_CACHE = "clinic-shell-v3";
+const STATIC_CACHE = "clinic-static-v3";
+const CURRENT_CACHES = [SHELL_CACHE, STATIC_CACHE];
 
 const PRECACHE_URLS = [
   "/offline.html",
@@ -22,6 +21,7 @@ const PRECACHE_URLS = [
 const OFFLINE_FALLBACK = "/offline.html";
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(SHELL_CACHE).then((cache) => cache.addAll(PRECACHE_URLS)),
   );
@@ -62,12 +62,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (isStaticAsset(url, request)) {
+  if (isStaticAsset(url, request) || url.pathname.startsWith("/_next/static/")) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  event.respondWith(staleWhileRevalidate(event, request));
+  if (request.mode === "navigate") {
+    event.respondWith(networkOnlyNavigate(request));
+  }
 });
 
 function isStaticAsset(url, request) {
@@ -99,35 +101,13 @@ async function cacheFirst(request) {
   }
 }
 
-async function staleWhileRevalidate(event, request) {
-  const cache = await caches.open(PAGE_CACHE);
-  const cached = await cache.match(request, { ignoreVary: true });
-  const update = fetch(request)
-    .then(async (response) => {
-      if (response && response.ok) {
-        await cache.put(request, response.clone());
-        await trimCache(cache, 50);
-      }
-      return response;
-    })
-    .catch(() => null);
-
-  if (cached) {
-    event.waitUntil(update.then(() => undefined));
-    return cached;
-  }
-
-  const fresh = await update;
-  if (fresh) return fresh;
-
-  if (request.mode === "navigate") {
+async function networkOnlyNavigate(request) {
+  try {
+    return await fetch(request);
+  } catch {
     const shell = await caches.open(SHELL_CACHE);
     const offline = await shell.match(OFFLINE_FALLBACK);
     if (offline) return offline;
+    return new Response("Offline", { status: 503, statusText: "Service Unavailable" });
   }
-
-  return new Response("Offline", {
-    status: 503,
-    statusText: "Service Unavailable",
-  });
 }

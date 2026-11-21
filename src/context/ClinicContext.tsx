@@ -6,220 +6,265 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { newId, removePatientRecords, removeTimelineEntry, type ClinicRecords } from "@/lib/clinic-utils";
-import { MOCK_PATIENTS, MOCK_TIMELINE } from "@/lib/mock-data";
+import { canDeleteRecords, staffRole, type StaffRole } from "@/lib/access";
+import {
+  patientToInsert,
+  patientToUpdate,
+  rowToEntry,
+  rowToPatient,
+  type PatientRow,
+  type TimelineRow,
+} from "@/lib/clinic-db";
+import { createClient } from "@/lib/supabase/client";
+import { supabasePublicEnv } from "@/lib/supabase/env";
 import type { Patient, TimelineEntry } from "@/lib/types";
 
-const STORAGE_KEY = "clinic-pwa-mock-v2-ar";
-
-interface StoredState {
-  patients: Patient[];
-  timeline: TimelineEntry[];
-}
+const LEGACY_STORAGE_KEY = "clinic-pwa-mock-v2-ar";
 
 interface ClinicContextValue {
   ready: boolean;
+  loadError: boolean;
+  role: StaffRole | null;
+  canDelete: boolean;
   patients: Patient[];
   timeline: TimelineEntry[];
   getPatient: (id: string) => Patient | undefined;
   getPatientTimeline: (id: string) => TimelineEntry[];
-  addPatient: (
-    input: Omit<Patient, "id" | "createdAt" | "updatedAt">,
-  ) => Patient;
-  updatePatient: (id: string, patch: Partial<Patient>) => void;
+  addPatient: (input: Omit<Patient, "id" | "createdAt" | "updatedAt">) => Promise<Patient | null>;
+  updatePatient: (id: string, patch: Partial<Patient>) => Promise<boolean>;
   addVisit: (input: {
     patientId: string;
     date: string;
     visitType: NonNullable<TimelineEntry["visitType"]>;
     notes: string;
     nextVisitDate?: string;
-  }) => TimelineEntry;
+  }) => Promise<TimelineEntry | null>;
   addNote: (input: {
     patientId: string;
     date: string;
     notes: string;
-  }) => TimelineEntry;
-  deletePatient: (id: string) => void;
-  deleteTimelineEntry: (id: string) => void;
-  resetDemoData: () => void;
+  }) => Promise<TimelineEntry | null>;
+  deletePatient: (id: string) => Promise<boolean>;
+  deleteTimelineEntry: (id: string) => Promise<boolean>;
 }
 
 const ClinicContext = createContext<ClinicContextValue | null>(null);
 
-function loadState(): StoredState {
-  if (typeof window === "undefined") {
-    return { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
-  }
+function clearLegacyStore() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
-    const parsed = JSON.parse(raw) as StoredState;
-    if (!parsed.patients?.length) {
-      return { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
-    }
-    return parsed;
+    localStorage.removeItem(LEGACY_STORAGE_KEY);
   } catch {
-    return { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
+    // Private mode can refuse storage. There is nothing else to keep.
   }
+}
+
+async function readRole(): Promise<StaffRole | null> {
+  if (!supabasePublicEnv()) return null;
+  const { data, error } = await createClient().auth.getClaims();
+  if (error || !data?.claims) return null;
+  const metadata = data.claims.app_metadata as { role?: unknown } | undefined;
+  return staffRole(metadata?.role);
 }
 
 export function ClinicProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
-  const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
-  const [timeline, setTimeline] = useState<TimelineEntry[]>(MOCK_TIMELINE);
-  const recordsRef = useRef<ClinicRecords>({ patients, timeline });
-  recordsRef.current = { patients, timeline };
+  const [loadError, setLoadError] = useState(false);
+  const [role, setRole] = useState<StaffRole | null>(null);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
 
-  const replaceRecords = useCallback((next: ClinicRecords) => {
-    recordsRef.current = next;
-    setPatients(next.patients);
-    setTimeline(next.timeline);
-  }, []);
-
-  useEffect(() => {
-    const state = loadState();
-    setPatients(state.patients);
-    setTimeline(state.timeline);
+  const load = useCallback(async () => {
+    clearLegacyStore();
+    if (!supabasePublicEnv()) {
+      setRole(null);
+      setPatients([]);
+      setTimeline([]);
+      setLoadError(false);
+      setReady(true);
+      return;
+    }
+    const nextRole = await readRole();
+    setRole(nextRole);
+    if (!nextRole) {
+      setPatients([]);
+      setTimeline([]);
+      setLoadError(false);
+      setReady(true);
+      return;
+    }
+    const supabase = createClient();
+    const [patientResult, timelineResult] = await Promise.all([
+      supabase.from("patients").select("*").order("updated_at", { ascending: false }),
+      supabase.from("timeline_entries").select("*").order("created_at", { ascending: false }),
+    ]);
+    if (patientResult.error || timelineResult.error) {
+      setPatients([]);
+      setTimeline([]);
+      setLoadError(true);
+      setReady(true);
+      return;
+    }
+    setPatients((patientResult.data as PatientRow[]).map(rowToPatient));
+    setTimeline((timelineResult.data as TimelineRow[]).map(rowToEntry));
+    setLoadError(false);
     setReady(true);
   }, []);
 
   useEffect(() => {
-    if (!ready) return;
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({ patients, timeline } satisfies StoredState),
-    );
-  }, [patients, timeline, ready]);
+    let active = true;
+    void load().then(() => {
+      if (!active) return;
+    });
+    if (!supabasePublicEnv()) return () => {
+      active = false;
+    };
+    const { data } = createClient().auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        setRole(null);
+        setPatients([]);
+        setTimeline([]);
+        setLoadError(false);
+        setReady(true);
+        return;
+      }
+      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+        void load();
+      }
+    });
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
+  }, [load]);
 
   const getPatient = useCallback(
-    (id: string) => patients.find((p) => p.id === id),
+    (id: string) => patients.find((patient) => patient.id === id),
     [patients],
   );
 
   const getPatientTimeline = useCallback(
     (id: string) =>
       timeline
-        .filter((e) => e.patientId === id)
-        .sort(
-          (a, b) =>
-            b.date.localeCompare(a.date) ||
-            b.createdAt.localeCompare(a.createdAt),
-        ),
+        .filter((entry) => entry.patientId === id)
+        .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt.localeCompare(a.createdAt)),
     [timeline],
   );
 
-  const addPatient = useCallback(
-    (input: Omit<Patient, "id" | "createdAt" | "updatedAt">) => {
-      const now = new Date().toISOString();
-      const patient: Patient = {
-        ...input,
-        id: newId("p"),
-        createdAt: now,
-        updatedAt: now,
-      };
-      setPatients((prev) => [patient, ...prev]);
-      return patient;
-    },
-    [],
-  );
-
-  const updatePatient = useCallback((id: string, patch: Partial<Patient>) => {
+  const touchPatient = useCallback(async (patientId: string) => {
+    const updatedAt = new Date().toISOString();
+    const { error } = await createClient()
+      .from("patients")
+      .update({ updated_at: updatedAt })
+      .eq("id", patientId);
+    if (error) return;
     setPatients((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? { ...p, ...patch, id: p.id, updatedAt: new Date().toISOString() }
-          : p,
-      ),
+      prev.map((patient) => (patient.id === patientId ? { ...patient, updatedAt } : patient)),
     );
   }, []);
 
-  const addVisit = useCallback(
-    (input: {
-      patientId: string;
-      date: string;
-      visitType: NonNullable<TimelineEntry["visitType"]>;
-      notes: string;
-      nextVisitDate?: string;
-    }) => {
-      const entry: TimelineEntry = {
-        id: newId("t"),
-        patientId: input.patientId,
+  const addPatient = useCallback(async (input: Omit<Patient, "id" | "createdAt" | "updatedAt">) => {
+    const { data, error } = await createClient()
+      .from("patients")
+      .insert(patientToInsert(input))
+      .select("*")
+      .single();
+    if (error || !data) return null;
+    const patient = rowToPatient(data as PatientRow);
+    setPatients((prev) => [patient, ...prev.filter((item) => item.id !== patient.id)]);
+    return patient;
+  }, []);
+
+  const updatePatient = useCallback(async (id: string, patch: Partial<Patient>) => {
+    const { data, error } = await createClient()
+      .from("patients")
+      .update(patientToUpdate(patch))
+      .eq("id", id)
+      .select("*")
+      .single();
+    if (error || !data) return false;
+    const patient = rowToPatient(data as PatientRow);
+    setPatients((prev) => prev.map((item) => (item.id === id ? patient : item)));
+    return true;
+  }, []);
+
+  const addVisit = useCallback(async (input: {
+    patientId: string;
+    date: string;
+    visitType: NonNullable<TimelineEntry["visitType"]>;
+    notes: string;
+    nextVisitDate?: string;
+  }) => {
+    const { data, error } = await createClient()
+      .from("timeline_entries")
+      .insert({
+        patient_id: input.patientId,
         kind: "visit",
-        date: input.date,
-        visitType: input.visitType,
+        entry_date: input.date,
+        visit_type: input.visitType,
         notes: input.notes,
-        nextVisitDate: input.nextVisitDate || undefined,
-        createdAt: new Date().toISOString(),
-      };
-      setTimeline((prev) => [entry, ...prev]);
-      setPatients((prev) =>
-        prev.map((p) =>
-          p.id === input.patientId
-            ? { ...p, updatedAt: new Date().toISOString() }
-            : p,
-        ),
-      );
-      return entry;
-    },
-    [],
-  );
+        next_visit_date: input.nextVisitDate || null,
+      })
+      .select("*")
+      .single();
+    if (error || !data) return null;
+    const entry = rowToEntry(data as TimelineRow);
+    setTimeline((prev) => [entry, ...prev]);
+    await touchPatient(input.patientId);
+    return entry;
+  }, [touchPatient]);
 
-  const addNote = useCallback(
-    (input: { patientId: string; date: string; notes: string }) => {
-      const entry: TimelineEntry = {
-        id: newId("t"),
-        patientId: input.patientId,
+  const addNote = useCallback(async (input: { patientId: string; date: string; notes: string }) => {
+    const { data, error } = await createClient()
+      .from("timeline_entries")
+      .insert({
+        patient_id: input.patientId,
         kind: "note",
-        date: input.date,
+        entry_date: input.date,
         notes: input.notes,
-        createdAt: new Date().toISOString(),
-      };
-      setTimeline((prev) => [entry, ...prev]);
-      setPatients((prev) =>
-        prev.map((p) =>
-          p.id === input.patientId
-            ? { ...p, updatedAt: new Date().toISOString() }
-            : p,
-        ),
-      );
-      return entry;
-    },
-    [],
-  );
+      })
+      .select("*")
+      .single();
+    if (error || !data) return null;
+    const entry = rowToEntry(data as TimelineRow);
+    setTimeline((prev) => [entry, ...prev]);
+    await touchPatient(input.patientId);
+    return entry;
+  }, [touchPatient]);
 
-  const deletePatient = useCallback((id: string) => {
-    const current = recordsRef.current;
-    const next = removePatientRecords(current, id);
-    if (next !== current) replaceRecords(next);
-  }, [replaceRecords]);
+  const deletePatient = useCallback(async (id: string) => {
+    if (!canDeleteRecords(role)) return false;
+    const { data, error } = await createClient()
+      .from("patients")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error || !data?.length) return false;
+    setPatients((prev) => prev.filter((patient) => patient.id !== id));
+    setTimeline((prev) => prev.filter((entry) => entry.patientId !== id));
+    return true;
+  }, [role]);
 
-  const deleteTimelineEntry = useCallback((id: string) => {
-    const current = recordsRef.current;
-    const next = removeTimelineEntry(current, id);
-    if (next !== current) replaceRecords(next);
-  }, [replaceRecords]);
-
-  const resetDemoData = useCallback(() => {
-    const next = { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
-    recordsRef.current = next;
-    setPatients(next.patients);
-    setTimeline(next.timeline);
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        patients: MOCK_PATIENTS,
-        timeline: MOCK_TIMELINE,
-      } satisfies StoredState),
-    );
-  }, []);
+  const deleteTimelineEntry = useCallback(async (id: string) => {
+    if (!canDeleteRecords(role)) return false;
+    const { data, error } = await createClient()
+      .from("timeline_entries")
+      .delete()
+      .eq("id", id)
+      .select("id");
+    if (error || !data?.length) return false;
+    setTimeline((prev) => prev.filter((entry) => entry.id !== id));
+    return true;
+  }, [role]);
 
   const value = useMemo(
     () => ({
       ready,
+      loadError,
+      role,
+      canDelete: canDeleteRecords(role),
       patients,
       timeline,
       getPatient,
@@ -230,10 +275,11 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
       addNote,
       deletePatient,
       deleteTimelineEntry,
-      resetDemoData,
     }),
     [
       ready,
+      loadError,
+      role,
       patients,
       timeline,
       getPatient,
@@ -244,13 +290,10 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
       addNote,
       deletePatient,
       deleteTimelineEntry,
-      resetDemoData,
     ],
   );
 
-  return (
-    <ClinicContext.Provider value={value}>{children}</ClinicContext.Provider>
-  );
+  return <ClinicContext.Provider value={value}>{children}</ClinicContext.Provider>;
 }
 
 export function useClinic() {
