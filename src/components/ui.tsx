@@ -68,18 +68,7 @@ export function Chip({
   onClick?: () => void;
   tone?: "default" | "danger" | "warn";
 }) {
-  const tones = {
-    default: active
-      ? "bg-[var(--primary)] text-white border-[var(--primary)]"
-      : "bg-[var(--surface)] text-[var(--ink)] border-[var(--line)]",
-    danger: active
-      ? "bg-[var(--danger)] text-white border-[var(--danger)]"
-      : "bg-[var(--danger-soft)] text-[var(--danger)] border-transparent",
-    warn: active
-      ? "bg-[var(--warn)] text-white border-[var(--warn)]"
-      : "bg-[var(--warn-soft)] text-[var(--warn-ink)] border-transparent",
-  };
-  const className = `inline-flex min-h-11 items-center justify-center rounded-full border px-4 text-sm font-semibold transition ${tones[tone]}`;
+  const className = `clinic-chip${active ? " is-active" : ""}${tone === "default" ? "" : ` clinic-chip--${tone}`}`;
   if (onClick) {
     return (
       <button type="button" onClick={onClick} aria-pressed={active} className={className}>
@@ -147,6 +136,16 @@ export function SecondaryButton({
   );
 }
 
+export function ListSkeleton() {
+  return (
+    <div className="skeleton-list" role="status" aria-label={ar.today.loadingTitle}>
+      <div className="skeleton-row" />
+      <div className="skeleton-row" />
+      <div className="skeleton-row" />
+    </div>
+  );
+}
+
 export function EmptyState({
   title,
   body,
@@ -169,9 +168,7 @@ export function SavedToast({ show }: { show: boolean }) {
   if (!show) return null;
   return (
     <div role="status" className="saved-toast">
-      <div className="rounded-xl bg-[var(--ink)] px-4 py-2 text-sm font-bold text-white">
-        {ar.common.saved}
-      </div>
+      <div className="notice-card">{ar.common.saved}</div>
     </div>
   );
 }

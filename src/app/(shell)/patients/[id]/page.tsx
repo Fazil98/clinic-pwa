@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { AppBack, Card, EmptyState } from "@/components/ui";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AppBack, Card, EmptyState, ListSkeleton } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
 import { activeNextVisit } from "@/lib/clinic-utils";
@@ -15,14 +16,19 @@ import {
   visitTypeLabel,
 } from "@/lib/labels";
 import { useClientToday } from "@/lib/use-client-today";
+import type { TimelineEntry } from "@/lib/types";
 
 export default function PatientDetailPage() {
   const today = useClientToday();
+  const router = useRouter();
   const params = useParams<{ id: string }>();
-  const { getPatient, getPatientTimeline, timeline, ready } = useClinic();
+  const { getPatient, getPatientTimeline, timeline, ready, deletePatient, deleteTimelineEntry } = useClinic();
   const patient = getPatient(params.id);
   const entries = getPatientTimeline(params.id);
   const [tab, setTab] = useState<"timeline" | "profile">("timeline");
+  const [pendingDelete, setPendingDelete] = useState<
+    { kind: "patient" } | { kind: "entry"; entry: TimelineEntry } | null
+  >(null);
   const nextVisit = patient
     ? activeNextVisit(timeline, patient.id)
     : undefined;
@@ -30,7 +36,7 @@ export default function PatientDetailPage() {
   const visitStatus = nextVisit === today ? "today" : nextVisit && nextVisit < today ? "overdue" : undefined;
 
   if (!ready) {
-    return <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />;
+    return <ListSkeleton />;
   }
 
   if (!patient) {
@@ -82,7 +88,7 @@ export default function PatientDetailPage() {
           </div>
 
           <a href={`tel:${patient.phone}`} className="identity-tile identity-tile--call">
-            <span className="identity-call-icon" aria-hidden="true">☎</span>
+            <PhoneIcon />
             <div className="min-w-0">
               <span className="identity-label">{ar.patient.call}</span>
               <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi>
@@ -100,7 +106,8 @@ export default function PatientDetailPage() {
         </div>
       </Card>
 
-      <div className="profile-tabs">
+      <div className="profile-tabs" data-tab={tab}>
+        <span className="profile-tabs-thumb" aria-hidden="true" />
         <button type="button" onClick={() => setTab("timeline")} aria-pressed={tab === "timeline"}>
           {ar.patient.timeline}
         </button>
@@ -116,30 +123,36 @@ export default function PatientDetailPage() {
             body={ar.patient.noNotesBody}
           />
         ) : (
-          <div className="space-y-3">
-            {entries.map((entry) => (
-              <Card key={entry.id}>
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-[var(--ink-soft)]">
-                    {entry.kind === "visit"
-                      ? visitTypeLabel[entry.visitType || "other"]
-                      : ar.patient.quickNote}
-                  </p>
-                  <p className="text-sm text-[var(--muted)]">
-                    {formatDisplayDate(entry.date)}
-                  </p>
-                </div>
-                <p className="mt-2 whitespace-pre-wrap wrap-anywhere text-base leading-8">
-                  {entry.notes}
-                </p>
-                {entry.nextVisitDate ? (
-                  <p className="mt-3 text-sm font-bold text-[var(--ink-soft)]">
-                    {ar.patient.nextVisit} ·{" "}
-                    {formatDisplayDate(entry.nextVisitDate)}
-                  </p>
-                ) : null}
-              </Card>
-            ))}
+          <div className="timeline-list">
+            {entries.map((entry) => {
+              const kindLabel = entry.kind === "visit"
+                ? visitTypeLabel[entry.visitType || "other"]
+                : ar.patient.quickNote;
+              return (
+                <Card key={entry.id} className="timeline-entry">
+                  <span className="timeline-rail" data-kind={entry.kind} aria-hidden="true" />
+                  <div className="min-w-0">
+                    <div className="timeline-entry-head">
+                      <p>{kindLabel}</p>
+                      <time dateTime={entry.date}>{formatDisplayDate(entry.date)}</time>
+                    </div>
+                    <p className="timeline-notes">{entry.notes}</p>
+                    {entry.nextVisitDate ? (
+                      <p className="timeline-next">
+                        {ar.patient.nextVisit} · {formatDisplayDate(entry.nextVisitDate)}
+                      </p>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="timeline-delete"
+                      onClick={() => setPendingDelete({ kind: "entry", entry })}
+                    >
+                      {ar.patient.deleteEntry}
+                    </button>
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )
       ) : (
@@ -270,15 +283,61 @@ export default function PatientDetailPage() {
             </dl>
           </Card>
 
-          <Link
-            href={`/patients/${patient.id}/edit`}
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 text-base font-bold text-[var(--ink)]"
-          >
-            {ar.patient.editDetails}
-          </Link>
+          <section className="profile-manage" aria-label={ar.patient.manage}>
+            <Link href={`/patients/${patient.id}/edit`} className="clinic-button clinic-button--secondary">
+              {ar.patient.editDetails}
+            </Link>
+            <button type="button" className="timeline-delete" onClick={() => setPendingDelete({ kind: "patient" })}>
+              {ar.patient.deletePatient}
+            </button>
+          </section>
         </div>
       )}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={pendingDelete?.kind === "entry" ? ar.patient.deleteEntryTitle : ar.patient.deletePatientTitle}
+        description={
+          pendingDelete?.kind === "entry"
+            ? ar.patient.deleteEntryBody(entryDeleteLabel(pendingDelete.entry))
+            : ar.patient.deletePatientBody(patient.fullName)
+        }
+        confirmLabel={ar.common.delete}
+        onConfirm={() => {
+          if (pendingDelete?.kind === "entry") {
+            deleteTimelineEntry(pendingDelete.entry.id);
+            setPendingDelete(null);
+            return;
+          }
+          const id = patient.id;
+          setPendingDelete(null);
+          router.replace("/patients");
+          deletePatient(id);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
+  );
+}
+
+function entryDeleteLabel(entry: TimelineEntry) {
+  const kind = entry.kind === "visit"
+    ? visitTypeLabel[entry.visitType || "other"]
+    : ar.patient.quickNote;
+  return `${kind} · ${formatDisplayDate(entry.date)}`;
+}
+
+function PhoneIcon() {
+  return (
+    <span className="identity-call-icon" aria-hidden="true">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M7.2 4.8h2.1l1.2 3-1.6 1a12 12 0 0 0 5.3 5.3l1-1.6 3 1.2v2.1c0 .8-.7 1.5-1.5 1.4A15.5 15.5 0 0 1 5.8 6.3c-.1-.8.6-1.5 1.4-1.5Z"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </span>
   );
 }
 

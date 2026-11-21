@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { usePwa } from "@/components/PwaProvider";
 import { Card, PageHeader, PrimaryButton, SecondaryButton } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
@@ -10,6 +12,7 @@ const installSteps = [ar.more.install1, ar.more.install2, ar.more.install3, ar.m
 export default function MorePage() {
   const { resetDemoData } = useClinic();
   const { canInstall, install } = usePwa();
+  const [resetOpen, setResetOpen] = useState(false);
 
   return (
     <>
@@ -27,7 +30,7 @@ export default function MorePage() {
               </PrimaryButton>
             </div>
           ) : null}
-          <details className="mt-3 rounded-xl bg-white p-3">
+          <details className="form-section mt-3">
             <summary className="flex min-h-11 items-center font-extrabold text-[var(--primary-deep)]">
               {ar.more.installTitle}
             </summary>
@@ -40,17 +43,23 @@ export default function MorePage() {
           <h2 className="text-lg font-extrabold">{ar.more.aboutTitle}</h2>
           <p className="mt-2 text-sm leading-7 text-[var(--muted)]">{ar.more.aboutBody}</p>
           <div className="mt-4">
-            <SecondaryButton
-              type="button"
-              onClick={() => {
-                if (confirm(ar.more.resetConfirm)) resetDemoData();
-              }}
-            >
+            <SecondaryButton type="button" onClick={() => setResetOpen(true)}>
               {ar.more.reset}
             </SecondaryButton>
           </div>
         </Card>
       </div>
+      <ConfirmDialog
+        open={resetOpen}
+        title={ar.more.resetTitle}
+        description={ar.more.resetBody}
+        confirmLabel={ar.more.resetAction}
+        onConfirm={() => {
+          setResetOpen(false);
+          resetDemoData();
+        }}
+        onCancel={() => setResetOpen(false)}
+      />
     </>
   );
 }

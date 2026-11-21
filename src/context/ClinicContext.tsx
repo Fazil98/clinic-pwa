@@ -6,10 +6,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { newId } from "@/lib/clinic-utils";
+import { newId, removePatientRecords, removeTimelineEntry, type ClinicRecords } from "@/lib/clinic-utils";
 import { MOCK_PATIENTS, MOCK_TIMELINE } from "@/lib/mock-data";
 import type { Patient, TimelineEntry } from "@/lib/types";
 
@@ -42,6 +43,8 @@ interface ClinicContextValue {
     date: string;
     notes: string;
   }) => TimelineEntry;
+  deletePatient: (id: string) => void;
+  deleteTimelineEntry: (id: string) => void;
   resetDemoData: () => void;
 }
 
@@ -68,6 +71,14 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [patients, setPatients] = useState<Patient[]>(MOCK_PATIENTS);
   const [timeline, setTimeline] = useState<TimelineEntry[]>(MOCK_TIMELINE);
+  const recordsRef = useRef<ClinicRecords>({ patients, timeline });
+  recordsRef.current = { patients, timeline };
+
+  const replaceRecords = useCallback((next: ClinicRecords) => {
+    recordsRef.current = next;
+    setPatients(next.patients);
+    setTimeline(next.timeline);
+  }, []);
 
   useEffect(() => {
     const state = loadState();
@@ -180,9 +191,23 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const deletePatient = useCallback((id: string) => {
+    const current = recordsRef.current;
+    const next = removePatientRecords(current, id);
+    if (next !== current) replaceRecords(next);
+  }, [replaceRecords]);
+
+  const deleteTimelineEntry = useCallback((id: string) => {
+    const current = recordsRef.current;
+    const next = removeTimelineEntry(current, id);
+    if (next !== current) replaceRecords(next);
+  }, [replaceRecords]);
+
   const resetDemoData = useCallback(() => {
-    setPatients(MOCK_PATIENTS);
-    setTimeline(MOCK_TIMELINE);
+    const next = { patients: MOCK_PATIENTS, timeline: MOCK_TIMELINE };
+    recordsRef.current = next;
+    setPatients(next.patients);
+    setTimeline(next.timeline);
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
@@ -203,6 +228,8 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
       updatePatient,
       addVisit,
       addNote,
+      deletePatient,
+      deleteTimelineEntry,
       resetDemoData,
     }),
     [
@@ -215,6 +242,8 @@ export function ClinicProvider({ children }: { children: ReactNode }) {
       updatePatient,
       addVisit,
       addNote,
+      deletePatient,
+      deleteTimelineEntry,
       resetDemoData,
     ],
   );

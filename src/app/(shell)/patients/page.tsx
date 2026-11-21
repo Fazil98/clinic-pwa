@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PatientRow } from "@/components/PatientRow";
 import { PatientSearch } from "@/components/PatientSearch";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, ListSkeleton, PageHeader } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
 import { activeNextVisit, searchPatients, sortPatients } from "@/lib/clinic-utils";
@@ -38,16 +38,14 @@ export default function PatientsPage() {
       />
       <div className="mb-4 space-y-3">
         <PatientSearch query={query} onChange={setQuery} />
-        <div role="group" aria-label={ar.patients.sortLabel} className="flex flex-wrap gap-2">
+        <div role="group" aria-label={ar.patients.sortLabel} className="sort-row">
           {sorts.map(({ id, label }) => (
             <button
               key={id}
               type="button"
               aria-pressed={sort === id}
               onClick={() => setSort(id)}
-              className={`min-h-11 rounded-full px-3 text-sm font-bold ${
-                sort === id ? "bg-[var(--primary)] text-white" : "border border-[var(--line)] bg-white text-[var(--ink-soft)]"
-              }`}
+              className="sort-chip"
             >
               {label}
             </button>
@@ -56,11 +54,22 @@ export default function PatientsPage() {
       </div>
 
       {!ready ? (
-        <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />
+        <ListSkeleton />
       ) : list.length === 0 ? (
         <EmptyState
           title={searching ? ar.patients.noResults : ar.patients.emptyTitle}
           body={searching ? ar.patients.emptySearch : ar.patients.emptyBody}
+          action={
+            searching ? (
+              <button type="button" className="clinic-button clinic-button--secondary" onClick={() => setQuery("")}>
+                {ar.patients.clearSearch}
+              </button>
+            ) : (
+              <Link href="/patients/new" className="clinic-button clinic-button--primary">
+                {ar.add.newPatientTitle}
+              </Link>
+            )
+          }
         />
       ) : (
         <ul className="space-y-2.5">

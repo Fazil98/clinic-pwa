@@ -135,3 +135,26 @@ export function getTodayItems(
 export function newId(prefix: string): string {
   return `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 }
+
+export interface ClinicRecords {
+  patients: Patient[];
+  timeline: TimelineEntry[];
+}
+
+/** Drop one patient and every visit or note that belongs to her. Unknown ids are a no-op. */
+export function removePatientRecords(records: ClinicRecords, patientId: string): ClinicRecords {
+  if (!records.patients.some((patient) => patient.id === patientId)) return records;
+  return {
+    patients: records.patients.filter((patient) => patient.id !== patientId),
+    timeline: records.timeline.filter((entry) => entry.patientId !== patientId),
+  };
+}
+
+/** Drop one timeline entry. The patient and her other entries stay. Unknown ids are a no-op. */
+export function removeTimelineEntry(records: ClinicRecords, entryId: string): ClinicRecords {
+  if (!records.timeline.some((entry) => entry.id === entryId)) return records;
+  return {
+    patients: records.patients,
+    timeline: records.timeline.filter((entry) => entry.id !== entryId),
+  };
+}

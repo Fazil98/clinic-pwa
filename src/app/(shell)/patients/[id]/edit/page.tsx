@@ -205,11 +205,8 @@ export default function EditPatientPage() {
           <button
             type="button"
             onClick={() => setHighRisk((v) => !v)}
-            className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 font-bold ${
-              highRisk
-                ? "border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]"
-                : "border-[var(--line)] bg-[var(--surface)]"
-            }`}
+            className="risk-row"
+            aria-pressed={highRisk}
           >
             <span>{ar.edit.highRisk}</span>
             <span>{highRisk ? ar.edit.on : ar.edit.off}</span>

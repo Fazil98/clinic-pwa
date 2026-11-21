@@ -141,7 +141,7 @@ export default function NewPatientPage() {
               dir="ltr"
             />
           </div>
-          <details className="rounded-xl bg-[var(--surface-soft)] p-3">
+          <details className="form-section">
             <summary className="flex min-h-11 items-center gap-2 font-bold text-[var(--primary)]"><span aria-hidden="true">+</span>{ar.newPatient.optionalDetails}</summary>
             <div className="mt-3 grid gap-4 sm:grid-cols-2">
                 <div>
@@ -198,7 +198,7 @@ export default function NewPatientPage() {
           </div>
 
           {patientType === "pregnant" ? (
-            <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="form-section space-y-4">
               <div>
                 <FieldLabel htmlFor="newPatient-dueDate">{ar.newPatient.dueDate}</FieldLabel>
                 <TextInput id="newPatient-dueDate"
@@ -265,7 +265,7 @@ export default function NewPatientPage() {
           ) : null}
 
           {patientType === "postpartum" ? (
-            <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="form-section space-y-4">
               <div>
                 <FieldLabel htmlFor="newPatient-deliveryDate">{ar.newPatient.deliveryDate}</FieldLabel>
                 <TextInput id="newPatient-deliveryDate"
@@ -303,7 +303,7 @@ export default function NewPatientPage() {
           ) : null}
 
           {patientType === "gynecology" || patientType === "other" ? (
-            <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="form-section space-y-3">
               <FieldLabel>{ar.newPatient.mainReason}</FieldLabel>
               <div className="flex flex-wrap gap-2">
                 {gynReasonsAr.map((reason) => (
@@ -374,7 +374,7 @@ export default function NewPatientPage() {
             />
           </div>
 
-          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
+          <div className="form-section">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{ar.newPatient.highRiskTitle}</p>
@@ -384,17 +384,12 @@ export default function NewPatientPage() {
               </div>
               <button
                 type="button"
+                className="risk-switch"
                 onClick={() => setHighRisk((v) => !v)}
-                className={`relative h-8 w-14 rounded-full transition ${
-                  highRisk ? "bg-[var(--danger)]" : "bg-[var(--line)]"
-                }`}
                 aria-pressed={highRisk}
+                aria-label={ar.newPatient.highRiskTitle}
               >
-                <span
-                  className={`absolute top-1 h-6 w-6 rounded-full bg-white transition ${
-                    highRisk ? "start-7" : "start-1"
-                  }`}
-                />
+                <span />
               </button>
             </div>
           </div>

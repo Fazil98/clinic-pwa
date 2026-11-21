@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, ListSkeleton, PageHeader } from "@/components/ui";
 import { PatientSearch } from "@/components/PatientSearch";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
@@ -25,7 +25,7 @@ export default function AddVisitPickPatientPage() {
       <div className="mb-5"><PatientSearch query={query} onChange={setQuery} /></div>
 
       {!ready ? (
-        <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />
+        <ListSkeleton />
       ) : list.length === 0 ? (
         <EmptyState
           title={query.trim() ? ar.patients.noResults : ar.patients.emptyTitle}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { PatientRow } from "@/components/PatientRow";
-import { EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, ListSkeleton, PageHeader } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
 import { getTodayItems, type TodayItem } from "@/lib/clinic-utils";
@@ -61,14 +61,22 @@ export default function TodayPage() {
       </div>
 
       {!ready ? (
-        <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />
+        <ListSkeleton />
       ) : items.length ? (
         <div className="follow-up-lists">
           <FollowUpList title={ar.today.needsFollowUp} items={overdue} tone="overdue" />
           <FollowUpList title={ar.today.scheduledToday} items={dueToday} tone="due" />
         </div>
       ) : (
-        <EmptyState title={ar.today.emptyTitle} body={ar.today.emptyBody} />
+        <EmptyState
+          title={ar.today.emptyTitle}
+          body={ar.today.emptyBody}
+          action={
+            <Link href="/patients/new" className="clinic-button clinic-button--primary">
+              {ar.add.newPatientTitle}
+            </Link>
+          }
+        />
       )}
     </>
   );

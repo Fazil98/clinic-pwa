@@ -109,23 +109,15 @@ export function PwaProvider({ children }: { children: ReactNode }) {
           className="pwa-update"
           role="alert"
         >
-          <div className="flex w-full max-w-lg flex-wrap items-center gap-2 rounded-2xl bg-[var(--ink)] px-3 py-3 text-white shadow-lg">
+          <div className="notice-card notice-card--bar">
             <div className="min-w-32 flex-1">
-              <p className="text-sm font-bold">{ar.pwa.updateTitle}</p>
-              <p className="text-sm text-white/80">{ar.pwa.updateBody}</p>
+              <strong>{ar.pwa.updateTitle}</strong>
+              <p>{ar.pwa.updateBody}</p>
             </div>
-            <button
-              type="button"
-              onClick={update}
-              className="min-h-11 shrink-0 rounded-xl bg-[var(--primary)] px-4 text-sm font-bold text-white"
-            >
+            <button type="button" onClick={update} className="clinic-button clinic-button--primary">
               {ar.pwa.update}
             </button>
-            <button
-              type="button"
-              onClick={() => setNeedRefresh(false)}
-              className="min-h-11 shrink-0 rounded-xl px-3 text-sm font-bold text-white/80"
-            >
+            <button type="button" onClick={() => setNeedRefresh(false)} className="notice-dismiss">
               {ar.pwa.dismiss}
             </button>
           </div>
