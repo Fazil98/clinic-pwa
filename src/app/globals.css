@@ -179,6 +179,8 @@ button:enabled, summary { cursor: pointer; }
 }
 
 .clinic-nav-link[aria-current], .clinic-nav-link[aria-expanded="true"] { color: var(--primary-deep); }
+.clinic-nav-link:hover:not([aria-current]):not([aria-expanded="true"]) { background: var(--surface-soft); color: var(--ink); }
+.clinic-nav-link:active { transform: scale(0.98); }
 
 .nav-icon {
   display: grid;
