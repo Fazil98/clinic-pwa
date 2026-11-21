@@ -600,6 +600,9 @@ button:enabled, summary { cursor: pointer; }
 .confirm-dialog::backdrop { background: var(--scrim); }
 body:has(.confirm-dialog[open]) { overflow: hidden; }
 .confirm-dialog-panel {
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
   padding: 1.15rem;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
