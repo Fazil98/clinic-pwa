@@ -37,6 +37,7 @@
   --muted: #4e5a6e;
   --line: #e5dfd4;
   --control-line: #cfc6b8;
+  --boundary: #8d8376;
   --primary: #254ccf;
   --primary-deep: #17359d;
   --primary-soft: #e8eeff;
@@ -217,13 +218,15 @@ button:enabled, summary { cursor: pointer; }
   flex: none;
   width: 44px;
   height: 44px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--boundary);
   border-radius: var(--radius-control);
   background: var(--surface);
   color: var(--primary-deep);
   font-size: 1.45rem;
   line-height: 1;
 }
+.icon-button:hover { background: var(--primary-soft); }
+.icon-button:active { transform: scale(0.98); }
 
 .chevron {
   display: block;
@@ -264,7 +267,7 @@ button:enabled, summary { cursor: pointer; }
 
 .clinic-button--primary { background: var(--primary); color: white; font-weight: 800; }
 .clinic-button--primary:hover:not(:disabled) { background: var(--primary-deep); }
-.clinic-button--secondary { border: 1px solid var(--line); background: var(--surface); color: var(--primary-deep); }
+.clinic-button--secondary { border: 1px solid var(--boundary); background: var(--surface); color: var(--primary-deep); }
 .clinic-button--secondary:hover:not(:disabled) { background: var(--primary-soft); }
 .clinic-button--danger { background: var(--danger); color: white; }
 .clinic-button--danger:hover:not(:disabled) { background: var(--danger-deep); }
@@ -438,8 +441,9 @@ button:enabled, summary { cursor: pointer; }
 .clinic-chip--warn { border-color: transparent; background: var(--warn-soft); color: var(--warn-ink); }
 .clinic-chip--warn.is-active { border-color: var(--warn); background: var(--warn); color: white; }
 
-.patient-search > button { position: absolute; inset-block-start: 50%; inset-inline-end: .2rem; transform: translateY(-50%); min-width: 44px; min-height: 44px; border-radius: .6rem; font-size: 1.5rem; line-height: 1; }
+.patient-search > button { position: absolute; inset-block-start: 50%; inset-inline-end: .2rem; transform: translateY(-50%); min-width: 44px; min-height: 44px; border-radius: .6rem; color: var(--primary-deep); font-size: 1.5rem; line-height: 1; }
 .patient-search > button:hover { background: var(--primary-soft); }
+.patient-search > button:active { transform: translateY(-50%) scale(0.98); }
 
 .patient-row,
 .patient-identity {
@@ -739,6 +743,8 @@ body:has(.add-sheet[open]) { overflow: hidden; }
   color: rgb(255 255 255 / .8);
   font-weight: 700;
 }
+.notice-dismiss:hover { color: white; }
+.notice-dismiss:active { transform: scale(0.98); }
 
 .skeleton-list { display: grid; gap: .7rem; }
 .skeleton-row {
