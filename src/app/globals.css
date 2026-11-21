@@ -127,6 +127,8 @@ button:enabled, summary { cursor: pointer; }
   min-height: 44px;
   line-height: 1.25;
 }
+.clinic-brand-link:hover { color: var(--primary-deep); }
+.clinic-brand-link:active { transform: scale(0.98); }
 
 .clinic-brand strong, .clinic-brand small { display: block; }
 .clinic-brand strong { font-weight: 800; }
