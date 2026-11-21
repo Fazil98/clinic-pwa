@@ -778,36 +778,38 @@ body:has(.add-sheet[open]) { overflow: hidden; }
 .risk-switch {
   position: relative;
   flex: none;
-  width: 3.5rem;
-  height: 2rem;
+  width: 4.5rem;
+  height: 2.75rem;
   border-radius: var(--radius-chip);
-  background: var(--line);
+  background: var(--boundary);
   transition: background-color 160ms;
 }
 .risk-switch[aria-pressed="true"] { background: var(--danger); }
 .risk-switch > span {
   position: absolute;
-  top: .2rem;
-  inset-inline-start: .2rem;
-  width: 1.6rem;
-  height: 1.6rem;
+  top: .25rem;
+  inset-inline-start: .25rem;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 50%;
   background: white;
   transition: transform 160ms ease-out;
 }
-.risk-switch[aria-pressed="true"] > span { transform: translateX(-1.5rem); }
+.risk-switch[aria-pressed="true"] > span { transform: translateX(-1.75rem); }
 .risk-row {
   display: flex;
   min-height: 48px;
   width: 100%;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid var(--line);
+  border: 1px solid var(--boundary);
   border-radius: var(--radius-control);
   background: var(--surface);
   padding-inline: 1rem;
   font-weight: 700;
 }
+.risk-row:hover:not([aria-pressed="true"]) { background: var(--primary-soft); }
+.risk-row:active { transform: scale(0.98); }
 .risk-row[aria-pressed="true"] {
   border-color: var(--danger);
   background: var(--danger-soft);
