@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "العيادة — نساء وتوليد",
   "short_name": "العيادة",
   "description": "متابعة المريضات بسهولة لعيادة النساء والتوليد",
@@ -8,8 +9,9 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#eef5f3",
-  "theme_color": "#0f766e",
+  "background_color": "#f4f7fc",
+  "theme_color": "#f4f7fc",
+  "categories": ["medical", "health"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -22,6 +24,24 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "اليوم",
+      "short_name": "اليوم",
+      "url": "/today"
+    },
+    {
+      "name": "مريضة جديدة",
+      "short_name": "جديدة",
+      "url": "/patients/new"
     }
   ]
 }

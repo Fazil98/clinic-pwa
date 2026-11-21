@@ -1,39 +1,44 @@
 import type { Metadata, Viewport } from "next";
-import { Cairo } from "next/font/google";
+import { PwaProvider } from "@/components/PwaProvider";
 import { ClinicProvider } from "@/context/ClinicContext";
 import "./globals.css";
-
-/** Cairo — clear Arabic UI font used widely on Arabic websites. */
-const clinicFont = Cairo({
-  variable: "--font-clinic",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
 
 export const metadata: Metadata = {
   title: "العيادة — نساء وتوليد",
   description: "متابعة المريضات بسهولة لعيادة النساء والتوليد",
   applicationName: "العيادة",
+  other: {
+    "apple-mobile-web-app-capable": "yes",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
     title: "العيادة",
   },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   manifest: "/manifest.webmanifest",
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f766e",
+  themeColor: "#f4f7fc",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="ar" dir="rtl" className={`${clinicFont.variable} h-full`}>
+    <html lang="ar" dir="rtl" className="h-full">
       <body className="min-h-full font-sans antialiased">
-        <ClinicProvider>{children}</ClinicProvider>
+        <PwaProvider>
+          <ClinicProvider>{children}</ClinicProvider>
+        </PwaProvider>
       </body>
     </html>
   );

@@ -1,61 +1,108 @@
 "use client";
 
 import Link from "next/link";
+import { useId, useRef, useState } from "react";
+import { AddChoices } from "@/components/AddChoices";
 import { usePathname } from "next/navigation";
 import { ar } from "@/lib/ar";
 
 const items = [
   { href: "/today", label: ar.nav.today, icon: TodayIcon },
   { href: "/patients", label: ar.nav.patients, icon: PatientsIcon },
-  { href: "/add", label: ar.nav.add, icon: AddIcon, primary: true },
+  { href: "/add", label: ar.nav.add, icon: AddIcon },
   { href: "/more", label: ar.nav.more, icon: MoreIcon },
 ] as const;
 
 export function BottomNav() {
   const pathname = usePathname();
 
+  const entry = pathname === "/patients/new" || /^\/patients\/[^/]+\/(edit|visit|note)$/.test(pathname);
+
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[var(--line)] bg-[var(--surface)]/95 backdrop-blur-md"
-      style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
-    >
-      <div className="mx-auto flex max-w-lg items-stretch justify-between px-2 pt-2">
+    <nav className="clinic-nav" data-entry={entry || undefined} aria-label={ar.common.navigation}>
+      <div className="clinic-nav-items">
         {items.map((item) => {
           const active =
             pathname === item.href ||
-            (item.href !== "/today" && pathname.startsWith(item.href));
+            pathname.startsWith(`${item.href}/`);
           const Icon = item.icon;
-          if ("primary" in item && item.primary) {
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex flex-1 flex-col items-center gap-1 pb-1"
-              >
-                <span className="flex h-12 w-12 -translate-y-1 items-center justify-center rounded-2xl bg-[var(--primary)] text-white shadow-[0_8px_20px_rgba(15,118,110,0.35)]">
-                  <Icon active />
-                </span>
-                <span className="text-xs font-bold text-[var(--primary)]">
-                  {item.label}
-                </span>
-              </Link>
-            );
+          if (item.href === "/add") {
+            return <AddNavItem key={`add-${pathname}`} active={active} current={pathname === item.href} />;
           }
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-1 pb-1 ${
-                active ? "text-[var(--primary)]" : "text-[var(--muted)]"
-              }`}
+              className="clinic-nav-link"
+              aria-current={active ? (pathname === item.href ? "page" : "true") : undefined}
             >
-              <Icon active={active} />
-              <span className="text-xs font-bold">{item.label}</span>
+              <span className="nav-icon"><Icon active={active} /></span>
+              <span>{item.label}</span>
             </Link>
           );
         })}
       </div>
     </nav>
+  );
+}
+
+function AddNavItem({ active, current }: { active: boolean; current: boolean }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
+  const [open, setOpen] = useState(false);
+
+  function show() {
+    dialog.current?.showModal();
+    setOpen(true);
+  }
+
+  function close() {
+    dialog.current?.close();
+  }
+
+  return (
+    <div className="add-nav-item">
+      <button
+        className="clinic-nav-link clinic-nav-add-mobile"
+        type="button"
+        ref={trigger}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-current={active ? (current ? "page" : "true") : undefined}
+        onClick={show}
+      >
+        <span className="nav-icon"><AddIcon active /></span>
+        <span>{ar.nav.add}</span>
+      </button>
+      <Link href="/add" className="clinic-nav-link clinic-nav-add-desktop" aria-current={active ? (current ? "page" : "true") : undefined}>
+        <span className="nav-icon"><AddIcon active={active} /></span>
+        <span>{ar.nav.add}</span>
+      </Link>
+      <dialog
+        ref={dialog}
+        className="add-sheet"
+        aria-labelledby={titleId}
+        onClose={() => {
+          setOpen(false);
+          trigger.current?.focus();
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) close();
+        }}
+      >
+        <div className="add-sheet-content">
+          <div className="sheet-handle" aria-hidden="true" />
+          <header className="sheet-header">
+            <h2 id={titleId}>{ar.add.title}</h2>
+            <button type="button" className="icon-button" onClick={close} aria-label={ar.common.close} autoFocus>
+              <span aria-hidden="true">×</span>
+            </button>
+          </header>
+          <AddChoices onChoose={close} />
+        </div>
+      </dialog>
+    </div>
   );
 }
 
@@ -114,13 +161,13 @@ function PatientsIcon({ active }: { active?: boolean }) {
   );
 }
 
-function AddIcon() {
+function AddIcon({ active }: { active?: boolean }) {
   return (
-    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
         d="M12 5v14M5 12h14"
         stroke="currentColor"
-        strokeWidth="2.4"
+        strokeWidth={active ? 2.4 : 1.8}
         strokeLinecap="round"
       />
     </svg>

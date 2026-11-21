@@ -36,7 +36,7 @@ export default function NewPatientPage() {
   const [phone, setPhone] = useState("");
   const [age, setAge] = useState("");
   const [area, setArea] = useState("");
-  const [patientType, setPatientType] = useState<PatientType>("pregnant");
+  const [patientType, setPatientType] = useState<PatientType>("other");
   const [dueDate, setDueDate] = useState("");
   const [lmpDate, setLmpDate] = useState("");
   const [previousPregnancies, setPreviousPregnancies] = useState(0);
@@ -102,9 +102,10 @@ export default function NewPatientPage() {
       <PageHeader
         title={ar.newPatient.title}
         subtitle={ar.newPatient.stepOf(step)}
+        backHref="/patients"
       />
 
-      <div className="mb-5 flex gap-2">
+      <div aria-hidden="true" className="mb-5 flex gap-2">
         {[1, 2, 3].map((n) => (
           <div
             key={n}
@@ -116,43 +117,52 @@ export default function NewPatientPage() {
       </div>
 
       {step === 1 ? (
-        <div className="space-y-4">
+        <div className="form-panel space-y-4">
+          <p className="text-sm text-[var(--muted)]">{ar.newPatient.firstStepHint}</p>
           <div>
-            <FieldLabel>{ar.newPatient.fullName}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="newPatient-fullName">{ar.newPatient.fullName}</FieldLabel>
+            <TextInput id="newPatient-fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               placeholder={ar.newPatient.fullNamePh}
-              autoFocus
+              autoComplete="name"
+              required
             />
           </div>
           <div>
-            <FieldLabel>{ar.newPatient.phone}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="newPatient-phone">{ar.newPatient.phone}</FieldLabel>
+            <TextInput id="newPatient-phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               placeholder={ar.newPatient.phonePh}
-              inputMode="tel"
+              type="tel"
+              autoComplete="tel"
+              required
               dir="ltr"
             />
           </div>
-          <div>
-            <FieldLabel>{ar.newPatient.age}</FieldLabel>
-            <TextInput
-              value={age}
-              onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))}
-              placeholder={ar.newPatient.agePh}
-              inputMode="numeric"
-            />
-          </div>
-          <div>
-            <FieldLabel>{ar.newPatient.area}</FieldLabel>
-            <TextInput
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder={ar.newPatient.areaPh}
-            />
-          </div>
+          <details className="rounded-xl bg-[var(--surface-soft)] p-3">
+            <summary className="flex min-h-11 items-center gap-2 font-bold text-[var(--primary)]"><span aria-hidden="true">+</span>{ar.newPatient.optionalDetails}</summary>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <FieldLabel htmlFor="newPatient-age">{ar.newPatient.age}</FieldLabel>
+                  <TextInput id="newPatient-age"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value.replace(/[٠-٩۰-۹]/g, (digit) => String(digit.charCodeAt(0) - (digit <= "٩" ? 0x0660 : 0x06f0))).replace(/\D/g, ""))}
+                    placeholder={ar.newPatient.agePh}
+                    inputMode="numeric"
+                  />
+                </div>
+                <div>
+                  <FieldLabel htmlFor="newPatient-area">{ar.newPatient.area}</FieldLabel>
+                  <TextInput id="newPatient-area"
+                    value={area}
+                    onChange={(e) => setArea(e.target.value)}
+                    placeholder={ar.newPatient.areaPh}
+                  />
+                </div>
+            </div>
+          </details>
           <PrimaryButton
             type="button"
             disabled={!canStep1}
@@ -171,7 +181,7 @@ export default function NewPatientPage() {
       ) : null}
 
       {step === 2 ? (
-        <div className="space-y-4">
+        <div className="form-panel space-y-4">
           <div>
             <FieldLabel>{ar.newPatient.whyHere}</FieldLabel>
             <div className="grid grid-cols-2 gap-2">
@@ -188,25 +198,25 @@ export default function NewPatientPage() {
           </div>
 
           {patientType === "pregnant" ? (
-            <div className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
               <div>
-                <FieldLabel>{ar.newPatient.dueDate}</FieldLabel>
-                <TextInput
+                <FieldLabel htmlFor="newPatient-dueDate">{ar.newPatient.dueDate}</FieldLabel>
+                <TextInput id="newPatient-dueDate"
                   type="date"
                   value={dueDate}
                   onChange={(e) => setDueDate(e.target.value)}
                 />
               </div>
               <div>
-                <FieldLabel>{ar.newPatient.lmp}</FieldLabel>
-                <TextInput
+                <FieldLabel htmlFor="newPatient-lmp">{ar.newPatient.lmp}</FieldLabel>
+                <TextInput id="newPatient-lmp"
                   type="date"
                   value={lmpDate}
                   onChange={(e) => setLmpDate(e.target.value)}
                 />
               </div>
               {week !== undefined ? (
-                <p className="text-2xl font-extrabold text-[var(--primary)]">
+                <p className="text-2xl font-extrabold text-[var(--ink)]">
                   {ar.newPatient.week(week)}
                 </p>
               ) : null}
@@ -255,10 +265,10 @@ export default function NewPatientPage() {
           ) : null}
 
           {patientType === "postpartum" ? (
-            <div className="space-y-4 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="space-y-4 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
               <div>
-                <FieldLabel>{ar.newPatient.deliveryDate}</FieldLabel>
-                <TextInput
+                <FieldLabel htmlFor="newPatient-deliveryDate">{ar.newPatient.deliveryDate}</FieldLabel>
+                <TextInput id="newPatient-deliveryDate"
                   type="date"
                   value={deliveryDate}
                   onChange={(e) => setDeliveryDate(e.target.value)}
@@ -282,8 +292,8 @@ export default function NewPatientPage() {
                 </div>
               </div>
               <div>
-                <FieldLabel>{ar.newPatient.babyNotes}</FieldLabel>
-                <TextArea
+                <FieldLabel htmlFor="newPatient-babyNotes">{ar.newPatient.babyNotes}</FieldLabel>
+                <TextArea id="newPatient-babyNotes"
                   value={babyNotes}
                   onChange={(e) => setBabyNotes(e.target.value)}
                   placeholder={ar.newPatient.optional}
@@ -293,7 +303,7 @@ export default function NewPatientPage() {
           ) : null}
 
           {patientType === "gynecology" || patientType === "other" ? (
-            <div className="space-y-3 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
+            <div className="space-y-3 rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
               <FieldLabel>{ar.newPatient.mainReason}</FieldLabel>
               <div className="flex flex-wrap gap-2">
                 {gynReasonsAr.map((reason) => (
@@ -319,7 +329,7 @@ export default function NewPatientPage() {
       ) : null}
 
       {step === 3 ? (
-        <div className="space-y-4">
+        <div className="form-panel space-y-4">
           <div>
             <FieldLabel>{ar.newPatient.healthFlags}</FieldLabel>
             <div className="flex flex-wrap gap-2">
@@ -337,8 +347,8 @@ export default function NewPatientPage() {
 
           {healthFlags.includes("allergy") ? (
             <div>
-              <FieldLabel>{ar.newPatient.allergyWhat}</FieldLabel>
-              <TextInput
+              <FieldLabel htmlFor="newPatient-allergyWhat">{ar.newPatient.allergyWhat}</FieldLabel>
+              <TextInput id="newPatient-allergyWhat"
                 value={allergyNote}
                 onChange={(e) => setAllergyNote(e.target.value)}
                 placeholder={ar.newPatient.allergyPh}
@@ -347,8 +357,8 @@ export default function NewPatientPage() {
           ) : null}
 
           <div>
-            <FieldLabel>{ar.newPatient.medicines}</FieldLabel>
-            <TextArea
+            <FieldLabel htmlFor="newPatient-medicines">{ar.newPatient.medicines}</FieldLabel>
+            <TextArea id="newPatient-medicines"
               value={medicines}
               onChange={(e) => setMedicines(e.target.value)}
               placeholder={ar.newPatient.medicinesPh}
@@ -356,15 +366,15 @@ export default function NewPatientPage() {
           </div>
 
           <div>
-            <FieldLabel>{ar.newPatient.anythingElse}</FieldLabel>
-            <TextArea
+            <FieldLabel htmlFor="newPatient-anythingElse">{ar.newPatient.anythingElse}</FieldLabel>
+            <TextArea id="newPatient-anythingElse"
               value={historyNotes}
               onChange={(e) => setHistoryNotes(e.target.value)}
               placeholder={ar.newPatient.anythingElsePh}
             />
           </div>
 
-          <div className="rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4">
+          <div className="rounded-xl border border-[var(--line)] bg-[var(--surface)] p-4">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="font-bold">{ar.newPatient.highRiskTitle}</p>

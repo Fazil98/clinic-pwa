@@ -49,29 +49,28 @@ export default function AddNotePage() {
   return (
     <div>
       <SavedToast show={saved} />
-      <PageHeader title={ar.note.title} subtitle={patient.fullName} />
+      <PageHeader title={ar.note.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
-      <div className="space-y-4">
+      <div className="form-panel space-y-5">
         <div>
-          <FieldLabel>{ar.note.date}</FieldLabel>
-          <TextInput
+          <FieldLabel htmlFor="note-date">{ar.note.date}</FieldLabel>
+          <TextInput id="note-date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
           />
         </div>
         <div>
-          <FieldLabel>{ar.note.note}</FieldLabel>
-          <TextArea
+          <FieldLabel htmlFor="note-note">{ar.note.note}</FieldLabel>
+          <TextArea id="note-note"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={ar.note.notePh}
-            autoFocus
           />
         </div>
         <PrimaryButton
           type="button"
-          disabled={!notes.trim()}
+          disabled={saved || !date || !notes.trim()}
           onClick={onSave}
         >
           {ar.note.save}

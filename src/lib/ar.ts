@@ -11,7 +11,9 @@ export const ar = {
   },
 
   today: {
-    title: "اليوم",
+    title: "متابعات اليوم",
+    findPatient: "بحث عن مريضة",
+    overdueLabel: "مواعيد متأخرة",
     subtitle: (todayCount: number, overdueCount: number) =>
       `${todayCount} اليوم · ${overdueCount} متأخر`,
     loadingTitle: "جاري التحميل",
@@ -24,7 +26,10 @@ export const ar = {
 
   patients: {
     title: "المريضات",
-    saved: (n: number) => `${n} مسجّلة`,
+    saved: (n: string) => `${n} مسجّلة`,
+    clearSearch: "مسح البحث",
+    noResults: "لا توجد نتائج",
+    sortLabel: "ترتيب المريضات",
     searchPlaceholder: "ابحثي بالاسم أو رقم الهاتف",
     sortRecent: "الأحدث",
     sortNext: "الزيارة القادمة",
@@ -47,7 +52,7 @@ export const ar = {
     mostCommon: "الأكثر استخداماً",
     newVisitTitle: "زيارة أو ملاحظة",
     newVisitBody: "اختاري المريضة ثم اكتبي ما حدث.",
-    whoTitle: "من؟",
+    whoTitle: "اختيار المريضة",
     whoSubtitle: "اختاري المريضة لهذه الزيارة أو الملاحظة",
     noMatchTitle: "لا توجد نتيجة",
     noMatchBody: "أضيفي المريضة أولاً، ثم ارجعي هنا.",
@@ -58,6 +63,7 @@ export const ar = {
   more: {
     title: "المزيد",
     subtitle: "المساعدة وأدوات التجربة",
+    installAppTitle: "التثبيت على الهاتف",
     installTitle: "ثبّتي التطبيق على الآيفون",
     install1: "١. افتحي هذا الموقع من متصفح Safari",
     install2: "٢. اضغطي زر المشاركة",
@@ -88,6 +94,7 @@ export const ar = {
     condition: "الحالة",
     history: "التاريخ المرضي",
     phone: "الهاتف",
+    call: "اتصال",
     age: "العمر",
     area: "المنطقة",
     emergency: "طوارئ",
@@ -124,8 +131,10 @@ export const ar = {
     agePh: "مثال: ٢٩",
     area: "المنطقة (اختياري)",
     areaPh: "الحي / المدينة",
-    saveContinue: "حفظ ومتابعة",
-    saveLater: "حفظ والإنهاء لاحقاً",
+    saveContinue: "متابعة إلى بيانات الحالة",
+    firstStepHint: "الاسم ورقم الهاتف يكفيان لحفظ الملف.",
+    optionalDetails: "إضافة العمر أو المنطقة",
+    saveLater: "حفظ الملف الآن",
     whyHere: "لماذا جاءت؟",
     dueDate: "موعد الولادة المتوقع",
     lmp: "أو تاريخ آخر دورة",
@@ -194,7 +203,27 @@ export const ar = {
 
   common: {
     saved: "تم الحفظ",
+    back: "رجوع",
+    close: "إغلاق",
+    navigation: "التنقل الرئيسي",
+    skipToContent: "انتقلي إلى المحتوى",
     dash: "—",
+  },
+
+  pwa: {
+    updateTitle: "تحديث جاهز",
+    updateBody: "نسخة جديدة من العيادة جاهزة.",
+    update: "تحديث",
+    dismiss: "لاحقاً",
+    offlineTitle: "لا يوجد اتصال",
+    offlineBody:
+      "تعذّر فتح هذه الصفحة الآن. المريضات المحفوظة على هذا الهاتف تبقى عند عودة الاتصال.",
+    retry: "إعادة المحاولة",
+    offlineWaiting: "بانتظار الاتصال…",
+    offlineStill: "ما زال الاتصال منقطعاً",
+    offlineBack: "عاد الاتصال. جاري التحديث…",
+    installAndroid: "تثبيت التطبيق",
+    installAndroidBody: "ثبّتي العيادة على هذا الهاتف بضغطة واحدة.",
   },
 } as const;
 

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { ar } from "@/lib/ar";
-import { formatDisplayDate } from "@/lib/dates";
+import { parseISODate } from "@/lib/dates";
 import { patientStatusLabel } from "@/lib/labels";
 import type { Patient } from "@/lib/types";
 import { useClientToday } from "@/lib/use-client-today";
+
+const shortDate = new Intl.DateTimeFormat("ar-IQ", { day: "numeric", month: "short" });
 
 export function PatientRow({
   patient,
@@ -15,49 +17,39 @@ export function PatientRow({
   badge?: "today" | "overdue";
 }) {
   const today = useClientToday();
+
   return (
-    <Link
-      href={`/patients/${patient.id}`}
-      className="block rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-4 shadow-[0_1px_0_rgba(20,32,30,0.03)] transition active:scale-[0.99]"
-    >
-      <div className="flex items-start justify-between gap-3">
+    <Link href={`/patients/${patient.id}`} className="patient-row" data-status={badge}>
+      <div className="patient-row-header">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="truncate text-lg font-bold text-[var(--ink)]">
-              {patient.fullName}
-            </h2>
-            {patient.highRisk ? (
-              <span className="rounded-full bg-[var(--danger-soft)] px-2 py-0.5 text-xs font-bold text-[var(--danger)]">
-                {ar.patients.highRisk}
-              </span>
-            ) : null}
-            {badge === "overdue" ? (
-              <span className="rounded-full bg-[var(--warn-soft)] px-2 py-0.5 text-xs font-bold text-[var(--warn-ink)]">
-                {ar.patients.badgeOverdue}
-              </span>
-            ) : null}
-            {badge === "today" ? (
-              <span className="rounded-full bg-[var(--primary-soft)] px-2 py-0.5 text-xs font-bold text-[var(--primary)]">
-                {ar.patients.badgeToday}
-              </span>
-            ) : null}
-          </div>
-          <p className="mt-1 text-base text-[var(--muted)]" dir="ltr">
-            {patient.phone}
-          </p>
-          <p className="mt-2 text-sm font-medium text-[var(--ink-soft)]">
-            {patientStatusLabel(patient, today)}
-          </p>
+          <p className="patient-row-name" dir="auto">{patient.fullName}</p>
+          <p className="patient-row-condition">{patientStatusLabel(patient, today)}</p>
+        </div>
+        <span className="patient-row-chevron" aria-hidden="true"><span className="chevron" /></span>
+      </div>
+
+      {patient.highRisk ? (
+        <p className="patient-tags">
+          <span className="patient-tag" data-tone="attention">{ar.patients.highRisk}</span>
+        </p>
+      ) : null}
+
+      {(!badge || nextVisitDate) && (
+        <div className="patient-row-footer">
+          {!badge ? <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi> : null}
           {nextVisitDate ? (
-            <p className="mt-1 text-sm text-[var(--muted)]">
-              {ar.patients.nextVisit} · {formatDisplayDate(nextVisitDate)}
-            </p>
+            <span className="patient-row-date">
+              <span className="patient-calendar" aria-hidden="true" />
+              <time dateTime={nextVisitDate}>{shortDate.format(parseISODate(nextVisitDate))}</time>
+            </span>
+          ) : null}
+          {badge ? (
+            <span className="patient-tag" data-tone={badge}>
+              {badge === "overdue" ? ar.patients.badgeOverdue : ar.patients.badgeToday}
+            </span>
           ) : null}
         </div>
-        <span className="mt-1 text-[var(--primary)]" aria-hidden>
-          ←
-        </span>
-      </div>
+      )}
     </Link>
   );
 }

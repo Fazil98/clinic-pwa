@@ -1,16 +1,16 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PatientRow } from "@/components/PatientRow";
-import { EmptyState, PageHeader, TextInput } from "@/components/ui";
+import { PatientSearch } from "@/components/PatientSearch";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
-import {
-  activeNextVisit,
-  searchPatients,
-  sortPatients,
-} from "@/lib/clinic-utils";
+import { activeNextVisit, searchPatients, sortPatients } from "@/lib/clinic-utils";
 import type { PatientSort } from "@/lib/types";
+
+const numberFormat = new Intl.NumberFormat("ar-IQ");
 
 const sorts: { id: PatientSort; label: string }[] = [
   { id: "recent", label: ar.patients.sortRecent },
@@ -23,66 +23,54 @@ export default function PatientsPage() {
   const { patients, timeline, ready } = useClinic();
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<PatientSort>("recent");
-
-  const list = useMemo(() => {
-    const filtered = searchPatients(patients, query);
-    return sortPatients(filtered, timeline, sort);
-  }, [patients, timeline, query, sort]);
+  const list = useMemo(
+    () => sortPatients(searchPatients(patients, query), timeline, sort),
+    [patients, timeline, query, sort],
+  );
+  const searching = Boolean(query.trim());
 
   return (
-    <div>
+    <>
       <PageHeader
         title={ar.patients.title}
-        subtitle={ready ? ar.patients.saved(patients.length) : "…"}
+        subtitle={ready ? ar.patients.saved(numberFormat.format(patients.length)) : undefined}
+        action={<Link href="/patients/new" className="clinic-link shrink-0">{ar.add.newPatientTitle}</Link>}
       />
-
       <div className="mb-4 space-y-3">
-        <TextInput
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder={ar.patients.searchPlaceholder}
-          inputMode="search"
-          aria-label={ar.patients.searchPlaceholder}
-        />
-        <div className="flex gap-2 overflow-x-auto pb-1">
-          {sorts.map((s) => (
+        <PatientSearch query={query} onChange={setQuery} />
+        <div role="group" aria-label={ar.patients.sortLabel} className="flex flex-wrap gap-2">
+          {sorts.map(({ id, label }) => (
             <button
-              key={s.id}
+              key={id}
               type="button"
-              onClick={() => setSort(s.id)}
-              className={`min-h-10 shrink-0 rounded-full px-4 text-sm font-bold ${
-                sort === s.id
-                  ? "bg-[var(--primary)] text-white"
-                  : "bg-[var(--surface)] text-[var(--muted)] border border-[var(--line)]"
+              aria-pressed={sort === id}
+              onClick={() => setSort(id)}
+              className={`min-h-11 rounded-full px-3 text-sm font-bold ${
+                sort === id ? "bg-[var(--primary)] text-white" : "border border-[var(--line)] bg-white text-[var(--ink-soft)]"
               }`}
             >
-              {s.label}
+              {label}
             </button>
           ))}
         </div>
       </div>
 
       {!ready ? (
-        <EmptyState
-          title={ar.today.loadingTitle}
-          body={ar.today.loadingBody}
-        />
+        <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />
       ) : list.length === 0 ? (
         <EmptyState
-          title={ar.patients.emptyTitle}
-          body={query ? ar.patients.emptySearch : ar.patients.emptyBody}
+          title={searching ? ar.patients.noResults : ar.patients.emptyTitle}
+          body={searching ? ar.patients.emptySearch : ar.patients.emptyBody}
         />
       ) : (
-        <div className="space-y-3">
+        <ul className="space-y-2.5">
           {list.map((patient) => (
-            <PatientRow
-              key={patient.id}
-              patient={patient}
-              nextVisitDate={activeNextVisit(timeline, patient.id)}
-            />
+            <li key={patient.id}>
+              <PatientRow patient={patient} nextVisitDate={activeNextVisit(timeline, patient.id)} />
+            </li>
           ))}
-        </div>
+        </ul>
       )}
-    </div>
+    </>
   );
 }

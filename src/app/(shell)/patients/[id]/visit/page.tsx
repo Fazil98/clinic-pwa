@@ -57,12 +57,12 @@ export default function AddVisitPage() {
   return (
     <div>
       <SavedToast show={saved} />
-      <PageHeader title={ar.visit.title} subtitle={patient.fullName} />
+      <PageHeader title={ar.visit.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
-      <div className="space-y-4">
+      <div className="form-panel space-y-5">
         <div>
-          <FieldLabel>{ar.visit.date}</FieldLabel>
-          <TextInput
+          <FieldLabel htmlFor="visit-date">{ar.visit.date}</FieldLabel>
+          <TextInput id="visit-date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
@@ -85,18 +85,17 @@ export default function AddVisitPage() {
         </div>
 
         <div>
-          <FieldLabel>{ar.visit.whatHappened}</FieldLabel>
-          <TextArea
+          <FieldLabel htmlFor="visit-whatHappened">{ar.visit.whatHappened}</FieldLabel>
+          <TextArea id="visit-whatHappened"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={ar.visit.notesPh}
-            autoFocus
           />
         </div>
 
         <div>
-          <FieldLabel>{ar.visit.nextVisit}</FieldLabel>
-          <TextInput
+          <FieldLabel htmlFor="visit-nextVisit">{ar.visit.nextVisit}</FieldLabel>
+          <TextInput id="visit-nextVisit"
             type="date"
             value={nextVisitDate}
             onChange={(e) => setNextVisitDate(e.target.value)}
@@ -106,7 +105,7 @@ export default function AddVisitPage() {
           </p>
         </div>
 
-        <PrimaryButton type="button" onClick={onSave}>
+        <PrimaryButton type="button" disabled={saved || !date} onClick={onSave}>
           {ar.visit.save}
         </PrimaryButton>
       </div>

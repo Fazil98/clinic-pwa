@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f4f7fc">
+  <title>لا يوجد اتصال — العيادة</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+      background: linear-gradient(150deg, #e7faf3, #f4f7fc 62%);
+      color: #172749;
+      font-family: "Cairo", "Segoe UI", Tahoma, sans-serif;
+      text-align: center;
+    }
+    .card {
+      width: min(100%, 420px);
+      background: #fff;
+      border-radius: 22px;
+      padding: 36px 24px;
+      border: 1px solid #dce4f1;
+      box-shadow: 0 10px 24px #1d347212;
+    }
+    h1 { margin: 0 0 12px; font-size: 28px; }
+    p { margin: 0 0 28px; color: #56647e; line-height: 1.8; }
+    button {
+      min-height: 48px;
+      border: 0;
+      border-radius: 12px;
+      background: #254ccf;
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      padding: 0 28px;
+      cursor: pointer;
+    }
+    .status { margin: 18px 0 0; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>لا يوجد اتصال</h1>
+    <p>تعذّر فتح هذه الصفحة الآن. المريضات المحفوظة على هذا الهاتف تبقى عند عودة الاتصال.</p>
+    <button type="button" id="retry">إعادة المحاولة</button>
+    <p class="status" id="status" role="status">بانتظار الاتصال…</p>
+  </div>
+  <script>
+    var statusEl = document.getElementById("status");
+    var button = document.getElementById("retry");
+
+    function retry() {
+      button.disabled = true;
+      fetch(location.origin + "/today", { method: "HEAD", cache: "no-store" })
+        .then(function () {
+          statusEl.textContent = "عاد الاتصال. جاري التحديث…";
+          location.href = "/today";
+        })
+        .catch(function () {
+          button.disabled = false;
+          statusEl.textContent = "ما زال الاتصال منقطعاً";
+        });
+    }
+
+    button.addEventListener("click", retry);
+    window.addEventListener("online", retry);
+  </script>
+</body>
+</html>

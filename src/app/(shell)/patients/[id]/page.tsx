@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
-import { Card, Chip, EmptyState, PageHeader } from "@/components/ui";
+import { AppBack, Card, EmptyState } from "@/components/ui";
 import { useClinic } from "@/context/ClinicContext";
 import { ar } from "@/lib/ar";
 import { activeNextVisit } from "@/lib/clinic-utils";
@@ -19,13 +19,19 @@ import { useClientToday } from "@/lib/use-client-today";
 export default function PatientDetailPage() {
   const today = useClientToday();
   const params = useParams<{ id: string }>();
-  const { getPatient, getPatientTimeline, timeline } = useClinic();
+  const { getPatient, getPatientTimeline, timeline, ready } = useClinic();
   const patient = getPatient(params.id);
   const entries = getPatientTimeline(params.id);
   const [tab, setTab] = useState<"timeline" | "profile">("timeline");
   const nextVisit = patient
     ? activeNextVisit(timeline, patient.id)
     : undefined;
+
+  const visitStatus = nextVisit === today ? "today" : nextVisit && nextVisit < today ? "overdue" : undefined;
+
+  if (!ready) {
+    return <EmptyState title={ar.today.loadingTitle} body={ar.today.loadingBody} />;
+  }
 
   if (!patient) {
     return (
@@ -38,79 +44,67 @@ export default function PatientDetailPage() {
 
   return (
     <div>
-      <PageHeader
-        title={patient.fullName}
-        subtitle={patientStatusLabel(patient, today)}
-      />
-
-      <Card className="mb-4">
-        <div className="flex flex-wrap items-center gap-2">
-          {patient.highRisk ? (
-            <Chip tone="danger" active>
-              {ar.patients.highRisk}
-            </Chip>
+      <div className="mb-3">
+        <AppBack href="/patients" />
+      </div>
+      <Card className="patient-identity">
+        <div className="identity-header">
+          <div className="min-w-0">
+            <h1 className="identity-title" dir="auto">{patient.fullName}</h1>
+            <p className="identity-condition">{patientStatusLabel(patient, today)}</p>
+          </div>
+          {patient.age || patient.highRisk ? (
+            <div className="patient-tags">
+              {patient.age ? <span className="patient-tag">{ar.patient.agePrefix} {patient.age}</span> : null}
+              {patient.highRisk ? (
+                <span className="patient-tag" data-tone="attention">{ar.patients.highRisk}</span>
+              ) : null}
+            </div>
           ) : null}
-          <Chip>{patientTypeLabel[patient.patientType]}</Chip>
         </div>
-        <a
-          href={`tel:${patient.phone}`}
-          className="mt-4 block text-xl font-bold text-[var(--primary)]"
-          dir="ltr"
-        >
-          {patient.phone}
-        </a>
-        {patient.age ? (
-          <p className="mt-1 text-[var(--muted)]">
-            {ar.patient.agePrefix} {patient.age}
-          </p>
-        ) : null}
-        {nextVisit ? (
-          <p className="mt-3 text-base font-bold">
-            {ar.patient.nextVisit} · {formatDisplayDate(nextVisit)}
-          </p>
-        ) : (
-          <p className="mt-3 text-base text-[var(--muted)]">
-            {ar.patient.noNext}
-          </p>
-        )}
+
+        <div className="identity-meta">
+          <div className="identity-tile identity-tile--visit" data-tone={visitStatus}>
+            <span className="patient-calendar" aria-hidden="true" />
+            <div className="min-w-0">
+              <span className="identity-label">{ar.patient.nextVisit}</span>
+              {nextVisit ? (
+                <time dateTime={nextVisit}>{formatDisplayDate(nextVisit)}</time>
+              ) : (
+                <span>{ar.patient.noNext}</span>
+              )}
+            </div>
+            {visitStatus ? (
+              <span className="patient-tag" data-tone={visitStatus}>
+                {visitStatus === "overdue" ? ar.patients.badgeOverdue : ar.patients.badgeToday}
+              </span>
+            ) : null}
+          </div>
+
+          <a href={`tel:${patient.phone}`} className="identity-tile identity-tile--call">
+            <span className="identity-call-icon" aria-hidden="true">☎</span>
+            <div className="min-w-0">
+              <span className="identity-label">{ar.patient.call}</span>
+              <bdi dir="ltr" className="patient-phone">{patient.phone}</bdi>
+            </div>
+          </a>
+        </div>
+
+        <div className="profile-actions">
+          <Link href={`/patients/${patient.id}/visit`} className="clinic-button clinic-button--primary">
+            {ar.patient.addVisit}
+          </Link>
+          <Link href={`/patients/${patient.id}/note`} className="clinic-button clinic-button--secondary">
+            {ar.patient.addNote}
+          </Link>
+        </div>
       </Card>
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
-        <Link
-          href={`/patients/${patient.id}/visit`}
-          className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-[var(--primary)] px-4 text-base font-bold text-white shadow-[0_10px_24px_rgba(15,118,110,0.25)]"
-        >
-          {ar.patient.addVisit}
-        </Link>
-        <Link
-          href={`/patients/${patient.id}/note`}
-          className="inline-flex min-h-12 items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 text-base font-bold text-[var(--ink)]"
-        >
-          {ar.patient.addNote}
-        </Link>
-      </div>
-
-      <div className="mb-4 grid grid-cols-2 gap-2 rounded-2xl border border-[var(--line)] bg-[var(--surface)] p-1">
-        <button
-          type="button"
-          onClick={() => setTab("timeline")}
-          className={`min-h-11 rounded-xl text-sm font-bold ${
-            tab === "timeline"
-              ? "bg-[var(--primary)] text-white"
-              : "text-[var(--muted)]"
-          }`}
-        >
+      <div className="profile-tabs">
+        <button type="button" onClick={() => setTab("timeline")} aria-pressed={tab === "timeline"}>
           {ar.patient.timeline}
         </button>
-        <button
-          type="button"
-          onClick={() => setTab("profile")}
-          className={`min-h-11 rounded-xl text-sm font-bold ${
-            tab === "profile"
-              ? "bg-[var(--primary)] text-white"
-              : "text-[var(--muted)]"
-          }`}
-        >
+        <button type="button" onClick={() => setTab("profile")} aria-pressed={tab === "profile"}>
           {ar.patient.profile}
         </button>
       </div>
@@ -126,7 +120,7 @@ export default function PatientDetailPage() {
             {entries.map((entry) => (
               <Card key={entry.id}>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm font-bold text-[var(--primary)]">
+                  <p className="text-sm font-bold text-[var(--ink-soft)]">
                     {entry.kind === "visit"
                       ? visitTypeLabel[entry.visitType || "other"]
                       : ar.patient.quickNote}
@@ -135,7 +129,7 @@ export default function PatientDetailPage() {
                     {formatDisplayDate(entry.date)}
                   </p>
                 </div>
-                <p className="mt-2 whitespace-pre-wrap text-base leading-8">
+                <p className="mt-2 whitespace-pre-wrap wrap-anywhere text-base leading-8">
                   {entry.notes}
                 </p>
                 {entry.nextVisitDate ? (
@@ -150,9 +144,9 @@ export default function PatientDetailPage() {
         )
       ) : (
         <div className="space-y-4">
-          <Card>
-            <h3 className="text-lg font-bold">{ar.patient.personal}</h3>
-            <dl className="mt-3 space-y-2 text-base">
+          <Card className="profile-section profile-section--contact">
+            <h3 className="profile-section-title">{ar.patient.personal}</h3>
+            <dl className="profile-facts">
               <Row label={ar.patient.phone} value={patient.phone} ltr />
               <Row
                 label={ar.patient.age}
@@ -164,6 +158,7 @@ export default function PatientDetailPage() {
               />
               <Row
                 label={ar.patient.emergency}
+                wide
                 value={
                   patient.emergencyName
                     ? `${patient.emergencyName} · ${patient.emergencyPhone || ""}`
@@ -173,9 +168,9 @@ export default function PatientDetailPage() {
             </dl>
           </Card>
 
-          <Card>
-            <h3 className="text-lg font-bold">{ar.patient.condition}</h3>
-            <dl className="mt-3 space-y-2 text-base">
+          <Card className="profile-section profile-section--condition">
+            <h3 className="profile-section-title">{ar.patient.condition}</h3>
+            <dl className="profile-facts">
               <Row
                 label={ar.patient.type}
                 value={patientTypeLabel[patient.patientType]}
@@ -226,6 +221,7 @@ export default function PatientDetailPage() {
                   />
                   <Row
                     label={ar.patient.babyNotes}
+                    wide
                     value={patient.babyNotes || ar.common.dash}
                   />
                 </>
@@ -234,24 +230,25 @@ export default function PatientDetailPage() {
               patient.patientType === "other" ? (
                 <Row
                   label={ar.patient.reason}
+                  wide
                   value={patient.mainReason || ar.common.dash}
                 />
               ) : null}
             </dl>
           </Card>
 
-          <Card>
-            <h3 className="text-lg font-bold">{ar.patient.history}</h3>
-            <div className="mt-3 flex flex-wrap gap-2">
+          <Card className="profile-section profile-section--history">
+            <h3 className="profile-section-title">{ar.patient.history}</h3>
+            <div className="profile-flag-list">
               {patient.healthFlags.length === 0 ? (
                 <p className="text-[var(--muted)]">{ar.patient.noFlags}</p>
               ) : (
                 patient.healthFlags.map((flag) => (
-                  <Chip key={flag}>{healthFlagLabel[flag]}</Chip>
+                  <span key={flag}>{healthFlagLabel[flag]}</span>
                 ))
               )}
             </div>
-            <dl className="mt-4 space-y-2 text-base">
+            <dl className="profile-facts">
               <Row
                 label={ar.patient.allergy}
                 value={patient.allergyNote || ar.common.dash}
@@ -262,10 +259,12 @@ export default function PatientDetailPage() {
               />
               <Row
                 label={ar.patient.bloodType}
+                ltr
                 value={patient.bloodType || ar.common.dash}
               />
               <Row
                 label={ar.patient.notes}
+                wide
                 value={patient.historyNotes || ar.common.dash}
               />
             </dl>
@@ -273,7 +272,7 @@ export default function PatientDetailPage() {
 
           <Link
             href={`/patients/${patient.id}/edit`}
-            className="inline-flex min-h-12 w-full items-center justify-center rounded-2xl border border-[var(--line)] bg-[var(--surface)] px-4 text-base font-bold text-[var(--ink)]"
+            className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--surface)] px-4 text-base font-bold text-[var(--ink)]"
           >
             {ar.patient.editDetails}
           </Link>
@@ -287,20 +286,17 @@ function Row({
   label,
   value,
   ltr,
+  wide,
 }: {
   label: string;
   value: string;
   ltr?: boolean;
+  wide?: boolean;
 }) {
   return (
-    <div>
-      <dt className="text-sm font-bold text-[var(--muted)]">{label}</dt>
-      <dd
-        className="mt-0.5 whitespace-pre-wrap leading-7"
-        dir={ltr ? "ltr" : undefined}
-      >
-        {value}
-      </dd>
+    <div className={wide ? "profile-fact profile-fact--wide" : "profile-fact"}>
+      <dt>{label}</dt>
+      <dd dir={ltr ? "ltr" : undefined}>{value}</dd>
     </div>
   );
 }

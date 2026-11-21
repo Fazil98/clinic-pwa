@@ -45,13 +45,30 @@ export function activeNextVisit(
   return latest?.nextVisitDate ?? dates.sort().at(-1);
 }
 
+function normalizePhone(value: string): string {
+  return value
+    .replace(/[٠-٩۰-۹]/g, (digit) =>
+      String(digit.charCodeAt(0) - (digit <= "٩" ? 0x0660 : 0x06f0)),
+    )
+    .replace(/[\s()+.\-]/g, "");
+}
+
+function normalizeName(value: string): string {
+  return value.toLowerCase()
+    .replace(/[أإآٱ]/g, "ا")
+    .replace(/[\u0640\u064b-\u065f\u0670]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export function searchPatients(patients: Patient[], query: string): Patient[] {
-  const q = query.trim().toLowerCase();
-  if (!q) return patients;
-  return patients.filter(
-    (p) =>
-      p.fullName.toLowerCase().includes(q) ||
-      p.phone.replace(/\s/g, "").includes(q.replace(/\s/g, "")),
+  if (!query.trim()) return patients;
+  const name = normalizeName(query);
+  const phone = normalizePhone(query);
+  const isPhone = /^\d+$/.test(phone);
+  return patients.filter((patient) =>
+    (name !== "" && normalizeName(patient.fullName).includes(name)) ||
+    (isPhone && normalizePhone(patient.phone).includes(phone)),
   );
 }
 

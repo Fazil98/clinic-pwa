@@ -99,21 +99,21 @@ export default function EditPatientPage() {
   return (
     <div>
       <SavedToast show={saved} />
-      <PageHeader title={ar.edit.title} subtitle={patient.fullName} />
+      <PageHeader title={ar.edit.title} subtitle={patient.fullName} backHref={`/patients/${patient.id}`} />
 
       <div className="space-y-5">
-        <section className="space-y-3">
+        <section className="form-panel space-y-3">
           <h2 className="text-lg font-bold">{ar.edit.personal}</h2>
           <div>
-            <FieldLabel>{ar.edit.fullName}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="edit-fullName">{ar.edit.fullName}</FieldLabel>
+            <TextInput id="edit-fullName"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
             />
           </div>
           <div>
-            <FieldLabel>{ar.edit.phone}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="edit-phone">{ar.edit.phone}</FieldLabel>
+            <TextInput id="edit-phone"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
@@ -121,20 +121,20 @@ export default function EditPatientPage() {
             />
           </div>
           <div>
-            <FieldLabel>{ar.edit.age}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="edit-age">{ar.edit.age}</FieldLabel>
+            <TextInput id="edit-age"
               value={age}
               onChange={(e) => setAge(e.target.value.replace(/\D/g, ""))}
               inputMode="numeric"
             />
           </div>
           <div>
-            <FieldLabel>{ar.edit.area}</FieldLabel>
-            <TextInput value={area} onChange={(e) => setArea(e.target.value)} />
+            <FieldLabel htmlFor="edit-area">{ar.edit.area}</FieldLabel>
+            <TextInput id="edit-area" value={area} onChange={(e) => setArea(e.target.value)} />
           </div>
         </section>
 
-        <section className="space-y-3">
+        <section className="form-panel space-y-3">
           <h2 className="text-lg font-bold">{ar.edit.condition}</h2>
           <div className="flex flex-wrap gap-2">
             {types.map((t) => (
@@ -149,8 +149,8 @@ export default function EditPatientPage() {
           </div>
           {patientType === "pregnant" ? (
             <div>
-              <FieldLabel>{ar.edit.dueDate}</FieldLabel>
-              <TextInput
+              <FieldLabel htmlFor="edit-dueDate">{ar.edit.dueDate}</FieldLabel>
+              <TextInput id="edit-dueDate"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
@@ -159,8 +159,8 @@ export default function EditPatientPage() {
           ) : null}
           {patientType === "gynecology" || patientType === "other" ? (
             <div>
-              <FieldLabel>{ar.edit.mainReason}</FieldLabel>
-              <TextInput
+              <FieldLabel htmlFor="edit-mainReason">{ar.edit.mainReason}</FieldLabel>
+              <TextInput id="edit-mainReason"
                 value={mainReason}
                 onChange={(e) => setMainReason(e.target.value)}
               />
@@ -182,22 +182,22 @@ export default function EditPatientPage() {
             ))}
           </div>
           <div>
-            <FieldLabel>{ar.edit.allergy}</FieldLabel>
-            <TextInput
+            <FieldLabel htmlFor="edit-allergy">{ar.edit.allergy}</FieldLabel>
+            <TextInput id="edit-allergy"
               value={allergyNote}
               onChange={(e) => setAllergyNote(e.target.value)}
             />
           </div>
           <div>
-            <FieldLabel>{ar.edit.medicines}</FieldLabel>
-            <TextArea
+            <FieldLabel htmlFor="edit-medicines">{ar.edit.medicines}</FieldLabel>
+            <TextArea id="edit-medicines"
               value={medicines}
               onChange={(e) => setMedicines(e.target.value)}
             />
           </div>
           <div>
-            <FieldLabel>{ar.edit.otherNotes}</FieldLabel>
-            <TextArea
+            <FieldLabel htmlFor="edit-otherNotes">{ar.edit.otherNotes}</FieldLabel>
+            <TextArea id="edit-otherNotes"
               value={historyNotes}
               onChange={(e) => setHistoryNotes(e.target.value)}
             />
@@ -205,7 +205,7 @@ export default function EditPatientPage() {
           <button
             type="button"
             onClick={() => setHighRisk((v) => !v)}
-            className={`flex min-h-12 w-full items-center justify-between rounded-2xl border px-4 font-bold ${
+            className={`flex min-h-12 w-full items-center justify-between rounded-xl border px-4 font-bold ${
               highRisk
                 ? "border-[var(--danger)] bg-[var(--danger-soft)] text-[var(--danger)]"
                 : "border-[var(--line)] bg-[var(--surface)]"
